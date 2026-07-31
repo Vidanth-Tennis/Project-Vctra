@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AITA Rank Finder</title>
+<style>
+  :root{
+    --bg: #0a0c0a;
+    --bg-edge: #000000;
+    --panel: #141712;
+    --panel-alt: #1b201a;
+    --court: #0e2b1f;
+    --court-light: #1b4433;
+    --line: #2a2f28;
+    --ink: #e9ece5;
+    --muted: #92998e;
+    --gold: #c9a24a;
+    --rose-gold: #cf9d94;
+    --rose-gold-dim: #8a6560;
+    --accent: #3f7a5a;
+    --accent-dark: #2a5842;
+    --danger: #a35a42;
+    --danger-bg: #241c19;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family: 'Georgia', 'Iowan Old Style', serif;
+    color: var(--ink);
+    background-color: var(--bg);
+    background-image:
+      radial-gradient(ellipse 90% 70% at 50% 0%, rgba(255,255,255,0.03) 0%, transparent 60%),
+      radial-gradient(ellipse 140% 110% at 50% 40%, var(--bg) 0%, var(--bg) 45%, var(--bg-edge) 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+  header{
+    background: linear-gradient(180deg, var(--court) 0%, #0a1a13 100%);
+    color: var(--ink);
+    padding: 2.2rem 1.5rem 2.6rem;
+    text-align:center;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+    background-image:
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 40px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 40px),
+      linear-gradient(180deg, var(--court) 0%, #0a1a13 100%);
+  }
+  header h1{
+    font-family: 'Trebuchet MS', sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    font-size: clamp(1.8rem, 5vw, 2.6rem);
+    margin: 0 0 0.4rem;
+  }
+  header h1 span{ background: linear-gradient(120deg, var(--gold) 0%, var(--rose-gold) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  header p{
+    margin: 0;
+    font-size: 0.95rem;
+    color: #a9b8ae;
+    max-width: 40rem;
+    margin-inline:auto;
+  }
+  main{
+    max-width: 820px;
+    margin: -1.6rem auto 3rem;
+    padding: 0 1.2rem;
+    position: relative;
+  }
+  .tabs{
+    display:flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .tab{
+    flex:1;
+    text-align:center;
+    padding: 0.7rem;
+    border-radius: 10px 10px 0 0;
+    background: #0e100d;
+    color: var(--muted);
+    font-family: 'Trebuchet MS', sans-serif;
+    font-weight:700;
+    cursor:pointer;
+    font-size: 0.9rem;
+    border: 1px solid var(--line);
+    border-bottom: none;
+  }
+  .tab.active{
+    background: var(--panel);
+    color: var(--gold);
+    box-shadow: 0 -6px 20px rgba(0,0,0,0.4), inset 0 2px 0 var(--rose-gold);
+  }
+  .card{
+    background: var(--panel);
+    border-radius: 14px;
+    box-shadow: 0 14px 40px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.03);
+    padding: 1.6rem;
+    margin-bottom: 1.4rem;
+    border: 1px solid var(--line);
+  }
+  label{
+    display:block;
+    font-family: 'Trebuchet MS', sans-serif;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 0.4rem;
+  }
+  select, input{
+    width:100%;
+    padding: 0.7rem 0.8rem;
+    border-radius: 8px;
+    border: 1.5px solid var(--line);
+    font-size: 1rem;
+    font-family: inherit;
+    background: var(--panel-alt);
+    color: var(--ink);
+  }
+  select:focus, input:focus{ outline: 1.5px solid var(--accent); border-color: var(--accent); }
+  .row{ display:flex; gap: 0.9rem; flex-wrap: wrap; }
+  .row > div{ flex: 1 1 220px; }
+  button{
+    margin-top: 1.1rem;
+    width: 100%;
+    padding: 0.85rem;
+    background: linear-gradient(180deg, var(--accent) 0%, var(--accent-dark) 100%);
+    color: #f2f5f0;
+    border: 1px solid rgba(0,0,0,0.3);
+    border-radius: 8px;
+    font-family: 'Trebuchet MS', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: filter 0.15s ease;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.45);
+  }
+  button:hover{ filter: brightness(1.12); }
+  #result{ margin-top: 1.2rem; }
+  .hit{
+    border-left: 5px solid var(--rose-gold);
+    background: var(--panel-alt);
+    padding: 1.1rem 1.2rem;
+    border-radius: 8px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+    margin-bottom: 0.7rem;
+  }
+  .hit .rank{
+    font-family:'Trebuchet MS', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: var(--gold);
+    line-height: 1;
+  }
+  .hit .rank sup{ font-size: 1rem; color: var(--muted); }
+  .hit .name{ font-size: 1.15rem; font-weight: 700; margin: 0.3rem 0 0.1rem; color: var(--ink); }
+  .hit .meta{ color: var(--muted); font-size: 0.92rem; }
+  .miss{
+    border-left: 5px solid var(--danger);
+    background: var(--danger-bg);
+    padding: 1.1rem 1.2rem;
+    border-radius: 8px;
+    color: #d3ada0;
+  }
+  .miss a{ color: var(--gold); }
+  .asof{
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin-top: 0.6rem;
+    text-align:right;
+  }
+  .note{
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .note a{ color: var(--gold); }
+  footer{
+    text-align:center;
+    color: var(--muted);
+    font-size: 0.8rem;
+    padding-bottom: 2rem;
+  }
+  table{ width:100%; border-collapse:collapse; font-size:0.92rem; }
+  tr{ border-bottom:1px solid var(--line); }
+  td{ padding:0.35rem 0; color: var(--ink); }
+  .compare-wrap{ display:flex; gap:1rem; flex-wrap:wrap; margin-top:1rem; }
+  .compare-col{ flex:1 1 240px; background:var(--panel-alt); border-radius:10px; padding:1rem; text-align:center; border:1px solid var(--line); }
+  .compare-col .rank{ font-family:'Trebuchet MS',sans-serif; font-size:2rem; font-weight:800; color:var(--gold); }
+  .compare-col .name{ font-weight:700; margin:0.3rem 0; color: var(--ink); }
+  .compare-col .pts{ color:var(--muted); font-size:0.85rem; }
+  .vs{ display:flex; align-items:center; justify-content:center; font-family:'Trebuchet MS',sans-serif; font-weight:800; color:var(--gold); font-size:1.3rem; }
+  .winner{ box-shadow: 0 0 0 3px var(--rose-gold) inset; }
+  .searchbox{ position:relative; }
+  .suggestions{ position:absolute; top:100%; left:0; right:0; background:var(--panel-alt); border:1px solid var(--line); border-top:none; border-radius:0 0 8px 8px; max-height:220px; overflow-y:auto; z-index:10; display:none; box-shadow:0 12px 24px rgba(0,0,0,0.5); }
+  .suggestions div{ padding:0.55rem 0.8rem; cursor:pointer; font-size:0.88rem; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; gap:0.5rem; color: var(--ink); }
+  .suggestions div:hover{ background: var(--court); }
+  .suggestions .s-id{ color:var(--muted); font-variant-numeric:tabular-nums; }
+  .preview{
+    margin-top:1.4rem;
+    background: linear-gradient(135deg, var(--court) 0%, #0a1712 100%);
+    color: #dfe6e0;
+    border-radius:12px;
+    padding:1.2rem 1.4rem;
+    line-height:1.55;
+    font-size:0.95rem;
+    border: 1px solid rgba(255,255,255,0.05);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  }
+  .preview strong{ color: var(--gold); }
+  .stat-grid{ display:flex; gap:1rem; margin-top:0.9rem; flex-wrap:wrap; }
+  .stat-grid div{ flex:1 1 140px; background:rgba(255,255,255,0.05); border-radius:8px; padding:0.6rem 0.8rem; }
+  .stat-grid .stat-label{ font-family:'Trebuchet MS',sans-serif; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.06em; opacity:0.75; }
+  .stat-grid .stat-val{ font-family:'Trebuchet MS',sans-serif; font-weight:800; font-size:1.1rem; }
+  .rank-holders .hit + .hit{ margin-top:0.6rem; }
+  .tied-scroll-wrap{ position:relative; margin-bottom:0.9rem; }
+  .tied-scroll{
+    display:flex;
+    gap:0.9rem;
+    overflow-x:auto;
+    scroll-snap-type:x proximity;
+    padding: 0.2rem 0.2rem 0.8rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--rose-gold-dim) var(--panel-alt);
+  }
+  .tied-scroll::-webkit-scrollbar{ height:8px; }
+  .tied-scroll::-webkit-scrollbar-track{ background: var(--panel-alt); border-radius:8px; }
+  .tied-scroll::-webkit-scrollbar-thumb{ background: var(--rose-gold-dim); border-radius:8px; }
+  .tied-card{
+    flex: 0 0 220px;
+    scroll-snap-align: start;
+    background: var(--panel-alt);
+    border: 1px solid var(--line);
+    border-top: 3px solid var(--rose-gold);
+    border-radius: 10px;
+    padding: 1rem;
+  }
+  .tied-card .rank{ font-family:'Trebuchet MS',sans-serif; font-size:1.7rem; font-weight:800; color:var(--gold); line-height:1; }
+  .tied-card .name{ font-weight:700; margin:0.35rem 0 0.15rem; font-size:0.98rem; }
+  .tied-card .meta{ color:var(--muted); font-size:0.82rem; line-height:1.4; }
+  .tied-label{
+    font-family:'Trebuchet MS',sans-serif;
+    font-size:0.8rem;
+    color: var(--rose-gold);
+    margin-bottom:0.5rem;
+    display:flex;
+    align-items:center;
+    gap:0.4rem;
+  }
+  .tied-label::after{ content:'\2192'; opacity:0.6; }
+</style>
+</head>
+<body>
+<header>
+  <h1>AITA <span>Rank Finder</span></h1>
+  <p>Enter your AITA registration number to find your national junior ranking, or compare two players head-to-head.</p>
+</header>
+
+<main>
+  <div class="tabs">
+    <div class="tab active" id="tab-lookup" onclick="switchTab('lookup')">Find My Rank</div>
+    <div class="tab" id="tab-compare" onclick="switchTab('compare')">Compare Players</div>
+  </div>
+
+  <div id="view-lookup">
+    <div class="card">
+      <div class="row">
+        <div>
+          <label for="cat">Category</label>
+          <select id="cat"></select>
+        </div>
+        <div class="searchbox">
+          <label for="aita">AITA Number, Name, or Rank #</label>
+          <input id="aita" type="text" placeholder="e.g. 437432, a name, or just 42" autocomplete="off">
+          <div class="suggestions" id="suggest-aita"></div>
+        </div>
+      </div>
+      <button onclick="lookup()">Find my rank</button>
+      <div id="result"></div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0;font-family:'Trebuchet MS',sans-serif;">Leaderboard (top 20)</h3>
+      <div id="board"><div class="asof">Loading rankings&hellip;</div></div>
+    </div>
+  </div>
+
+  <div id="view-compare" style="display:none;">
+    <div class="card">
+      <div class="row">
+        <div>
+          <label for="cat2">Category</label>
+          <select id="cat2"></select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="searchbox">
+          <label for="aitaA">Player A &mdash; Number or Name</label>
+          <input id="aitaA" type="text" placeholder="e.g. 437432 or name" autocomplete="off">
+          <div class="suggestions" id="suggest-aitaA"></div>
+        </div>
+        <div class="searchbox">
+          <label for="aitaB">Player B &mdash; Number or Name</label>
+          <input id="aitaB" type="text" placeholder="e.g. 438109 or name" autocomplete="off">
+          <div class="suggestions" id="suggest-aitaB"></div>
+        </div>
+      </div>
+      <button onclick="compare()">Compare</button>
+      <div id="compareResult"></div>
+    </div>
+  </div>
+
+  <div class="card note">
+    <p><strong>About this data.</strong> This is the official AITA junior national ranking list dated <strong>22nd June, 2026</strong>, sourced directly from AITA's published PDFs for Boys and Girls U-14 and U-16, and covers the full published list in each category.</p>
+    <p><strong>This page does not update itself.</strong> It's a static file with a snapshot baked in &mdash; AITA doesn't offer a public feed a page like this could poll automatically, and there's no server behind this page to check for changes on a schedule. When you want current numbers, just come back and ask for a refresh; the whole pull-and-rebuild only takes one conversation.</p>
+    <p><strong>Three ways to search:</strong> a full or partial name (pick from the dropdown), an AITA registration number, or just a rank number (like "42") to see who currently holds that spot.</p>
+    <p><strong>About the Compare tab's commentary:</strong> the "matchup preview" is generated from each player's current rank and points gap only. AITA doesn't publish match history, head-to-head records, or a ranking archive, so this tool has no way to know how two players have actually fared against each other in the past &mdash; the preview is a read of today's standing, not a prediction backed by real results.</p>
+    <p>For the live, always-current list, see <a href="https://aitatennis.com/playerranking/" target="_blank" rel="noopener">aitatennis.com/playerranking</a>.</p>
+  </div>
+</main>
+
+<footer>Built from official AITA ranking PDFs. Not affiliated with AITA.</footer>
+
+<script>
+let DATA = {};
+let ASOF = "";
+
+function cap(s){
+  return s.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function populateSelect(sel){
+  Object.keys(DATA).forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c; opt.textContent = c + ' (' + DATA[c].length + ' players)';
+    sel.appendChild(opt);
+  });
+}
+const catSelect = document.getElementById('cat');
+const cat2Select = document.getElementById('cat2');
+
+function renderBoard(){
+  const cat = catSelect.value;
+  const d = DATA[cat];
+  let html = `<div class="asof">Ranking as of ${ASOF}</div><table>`;
+  d.slice(0,20).forEach(p => {
+    html += `<tr>
+      <td style="width:2.4rem;color:var(--muted);">${p[0]}</td>
+      <td>${cap(p[1])}</td>
+      <td style="color:var(--muted);width:3rem;">${p[3]}</td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums;">${p[4]}</td>
+    </tr>`;
+  });
+  html += `</table>`;
+  document.getElementById('board').innerHTML = html;
+}
+
+function switchTab(tab){
+  document.getElementById('tab-lookup').classList.toggle('active', tab==='lookup');
+  document.getElementById('tab-compare').classList.toggle('active', tab==='compare');
+  document.getElementById('view-lookup').style.display = tab==='lookup' ? 'block' : 'none';
+  document.getElementById('view-compare').style.display = tab==='compare' ? 'block' : 'none';
+}
+
+// ---- search resolution: accepts a numeric AITA id OR a (partial) name ----
+function findMatches(query, catData){
+  const q = query.trim();
+  if(!q) return [];
+  if(/^\d+$/.test(q)){
+    const hit = catData.find(p => p[2] === q);
+    return hit ? [hit] : [];
+  }
+  const ql = q.toLowerCase();
+  return catData.filter(p => p[1].toLowerCase().includes(ql)).slice(0, 8);
+}
+
+function lookupByRank(rankNum, catData){
+  const holders = catData.filter(p => p[0] === rankNum);
+  if(holders.length) return { holders, exact: true, rankNum };
+  const maxRank = catData[catData.length - 1][0];
+  let low = rankNum, high = rankNum;
+  while(low >= 1 || high <= maxRank){
+    low--; high++;
+    if(low >= 1){
+      const h = catData.filter(p => p[0] === low);
+      if(h.length) return { holders: h, exact: false, rankNum: low, requested: rankNum };
+    }
+    if(high <= maxRank){
+      const h = catData.filter(p => p[0] === high);
+      if(h.length) return { holders: h, exact: false, rankNum: high, requested: rankNum };
+    }
+    if(low < 1 && high > maxRank) break;
+  }
+  return null;
+}
+
+function renderRankHolders(result, cat, d){
+  const { holders, exact, rankNum, requested } = result;
+  let html = '<div class="rank-holders">';
+  if(!exact){
+    html += `<div class="miss">No one holds exactly rank #${requested} in ${cat} (ties shift the numbering) &mdash; showing the nearest existing rank, #${rankNum}, instead.</div>`;
+  }
+
+  if(holders.length === 1){
+    const hit = holders[0];
+    html += `<div class="hit">
+      <div class="rank">#${hit[0]}<sup> of ${d.length} in ${cat}</sup></div>
+      <div class="name">${cap(hit[1])}</div>
+      <div class="meta">AITA ${hit[2]} &middot; ${hit[3]} &middot; ${hit[4]} points &middot; as of ${ASOF}</div>
+    </div>
+    <div class="preview">${lookupNarrative(hit, cat)}</div>`;
+  } else {
+    html += `<div class="tied-label">${holders.length} players are tied at #${rankNum} &mdash; scroll to see them all</div>`;
+    html += `<div class="tied-scroll-wrap"><div class="tied-scroll">`;
+    holders.forEach(hit => {
+      html += `<div class="tied-card">
+        <div class="rank">#${hit[0]}</div>
+        <div class="name">${cap(hit[1])}</div>
+        <div class="meta">AITA ${hit[2]}<br>${hit[3]} &middot; ${hit[4]} pts</div>
+      </div>`;
+    });
+    html += `</div></div>`;
+    html += `<div class="asof">Search any of these by name or AITA number for their full breakdown.</div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+function wireAutocomplete(inputId, suggestId, catSelectEl, onPick){
+  const input = document.getElementById(inputId);
+  const box = document.getElementById(suggestId);
+  input.addEventListener('input', () => {
+    const q = input.value.trim();
+    if(q.length < 2 || /^\d+$/.test(q)){ box.style.display='none'; return; }
+    const cat = catSelectEl.value;
+    const matches = findMatches(q, DATA[cat]);
+    if(!matches.length){ box.style.display='none'; return; }
+    box.innerHTML = matches.map(p => `<div data-id="${p[2]}"><span>${cap(p[1])}</span><span class="s-id">#${p[0]} &middot; ${p[2]}</span></div>`).join('');
+    box.style.display = 'block';
+    box.querySelectorAll('div').forEach(el => {
+      el.addEventListener('click', () => {
+        input.value = el.getAttribute('data-id');
+        box.style.display = 'none';
+        if(onPick) onPick();
+      });
+    });
+  });
+  document.addEventListener('click', (e) => {
+    if(e.target !== input) box.style.display = 'none';
+  });
+}
+
+function initApp(){
+  populateSelect(catSelect);
+  populateSelect(cat2Select);
+  catSelect.addEventListener('change', renderBoard);
+  renderBoard();
+  wireAutocomplete('aita', 'suggest-aita', catSelect, lookup);
+  wireAutocomplete('aitaA', 'suggest-aitaA', cat2Select, null);
+  wireAutocomplete('aitaB', 'suggest-aitaB', cat2Select, null);
+}
+
+async function loadData(){
+  try{
+    const res = await fetch('data.json');
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    DATA = json.categories;
+    ASOF = json.asOf;
+    initApp();
+  } catch(err){
+    document.getElementById('board').innerHTML =
+      `<div class="miss">Couldn't load ranking data (data.json). If you're testing locally by double-clicking the HTML file, browsers block that &mdash; run a local server (e.g. <code>python3 -m http.server</code>) or view it on the deployed site instead. Details: ${err.message}</div>`;
+  }
+}
+loadData();
+
+function resolveOne(query, catData){
+  const matches = findMatches(query, catData);
+  if(matches.length === 1) return { hit: matches[0] };
+  if(matches.length === 0) return { hit: null, matches: [] };
+  return { hit: null, matches };
+}
+
+function lookup(){
+  const resultElGuard = document.getElementById('result');
+  if(!catSelect.value){ resultElGuard.innerHTML = `<div class="miss">Rankings are still loading &mdash; try again in a moment.</div>`; return; }
+  const cat = catSelect.value;
+  const query = document.getElementById('aita').value.trim();
+  const resultEl = document.getElementById('result');
+  if(!query){ resultEl.innerHTML = `<div class="miss">Enter your AITA registration number, full name, or a rank number above to search.</div>`; return; }
+  const d = DATA[cat];
+
+  // Rank-number search: plain numbers up to 4 digits are treated as a rank position
+  // (AITA registration numbers are always 6 digits, so there's no ambiguity).
+  if(/^\d+$/.test(query) && query.length <= 4){
+    const rankNum = parseInt(query, 10);
+    const result = lookupByRank(rankNum, d);
+    if(result){
+      resultEl.innerHTML = renderRankHolders(result, cat, d);
+    } else {
+      resultEl.innerHTML = `<div class="miss">No rank near #${rankNum} exists in this ${cat} list (it only goes to #${d[d.length-1][0]}).</div>`;
+    }
+    return;
+  }
+
+  const { hit, matches } = resolveOne(query, d);
+  if(hit){
+    resultEl.innerHTML = `<div class="hit">
+      <div class="rank">#${hit[0]}<sup> of ${d.length} in ${cat}</sup></div>
+      <div class="name">${cap(hit[1])}</div>
+      <div class="meta">AITA ${hit[2]} &middot; ${hit[3]} &middot; ${hit[4]} points &middot; as of ${ASOF}</div>
+    </div>
+    <div class="preview">${lookupNarrative(hit, cat)}</div>`;
+  } else if(matches && matches.length > 1){
+    resultEl.innerHTML = `<div class="miss">Multiple players match "${query}" in ${cat}. Try the suggestions dropdown, or narrow with more of the name.<ul>${matches.map(p=>`<li>${cap(p[1])} &mdash; #${p[0]}, AITA ${p[2]}</li>`).join('')}</ul></div>`;
+  } else {
+    resultEl.innerHTML = `<div class="miss">Couldn't find "${query}" in the top ${d.length} of ${cat}. Check the <a href="https://aitatennis.com/playerranking/" target="_blank" rel="noopener">official AITA rankings</a> to confirm.</div>`;
+  }
+}
+
+const STATE_NAMES = {
+  MH:'Maharashtra', KA:'Karnataka', PB:'Punjab', AS:'Assam', TS:'Telangana', DL:'Delhi',
+  MP:'Madhya Pradesh', RJ:'Rajasthan', TN:'Tamil Nadu', WB:'West Bengal', HR:'Haryana',
+  GJ:'Gujarat', KL:'Kerala', AP:'Andhra Pradesh', OD:'Odisha', UP:'Uttar Pradesh',
+  UK:'Uttarakhand', JK:'Jammu & Kashmir', CG:'Chhattisgarh', JH:'Jharkhand', BR:'Bihar',
+  PY:'Puducherry', MZ:'Mizoram', ML:'Meghalaya', NL:'Nagaland', HP:'Himachal Pradesh',
+  MN:'Manipur', GA:'Goa', CH:'Chandigarh'
+};
+function stateName(code){ return STATE_NAMES[code] || code; }
+
+function ordinalPercentile(rank, poolSize){
+  const pct = (rank / poolSize) * 100;
+  if(pct <= 5) return 'elite, top-5% nationally';
+  if(pct <= 15) return 'firmly in the national top tier';
+  if(pct <= 40) return 'solidly mid-upper pack nationally';
+  return 'in the wider chasing pack nationally';
+}
+
+function milestoneFor(cat, targetRank){
+  const d = DATA[cat];
+  let entry = d.find(p=>p[0]===targetRank);
+  if(!entry){
+    const below = d.filter(p=>p[0]<=targetRank);
+    entry = below.length ? below[below.length-1] : d[d.length-1];
+  }
+  return entry;
+}
+
+function nearestUnreachedMilestone(rank){
+  const targets = [200, 100, 50].filter(m => m < rank).sort((a,b)=>b-a);
+  return targets.length ? targets[0] : 20;
+}
+
+function milestoneSentence(hit, cat){
+  const [rank, name] = hit;
+  if(rank <= 50) return `<strong>${cap(name)}</strong> is already inside the national top 50 in ${cat}.`;
+  const target = nearestUnreachedMilestone(rank);
+  const targetEntry = milestoneFor(cat, target);
+  const rankGap = rank - target;
+  const ptsGap = targetEntry ? Math.max(0, targetEntry[4] - hit[4]) : null;
+  return `<strong>${cap(name)}</strong> sits ${rankGap} places outside the top ${target}${ptsGap !== null ? ` (roughly ${ptsGap.toFixed(2)} points behind the current #${target})` : ''}.`;
+}
+
+function lookupNarrative(hit, cat){
+  const poolSize = DATA[cat].length;
+  const [rank, name, id, state, pts] = hit;
+  const stateFull = stateName(state);
+  const percentileBand = ordinalPercentile(rank, poolSize);
+
+  const stateMates = DATA[cat].filter(p => p[3] === state);
+  const stateRank = stateMates.findIndex(p => p[2] === id) + 1;
+  const stateCount = stateMates.length;
+
+  const percentileP = `<strong>${cap(name)}</strong> (AITA ${id}) currently sits at <strong>#${rank}</strong> of ${poolSize} ranked players in ${cat}, with ${pts} ranking points as of ${ASOF}. That places them ${percentileBand}.`;
+
+  const stateP = stateCount > 1
+    ? `Representing <strong>${stateFull}</strong>, ${cap(name)} is the <strong>#${stateRank} ranked player from the state</strong> out of ${stateCount} ${stateFull} players who show up in this ${cat} list. That's worth knowing because state and zonal ranking tournaments will often mean running into the same ${stateFull} names again and again &mdash; the players just above and below at #${Math.max(1, stateRank-1)} and #${stateRank+1} in the state list are effectively the immediate rivals to watch.`
+    : `Representing <strong>${stateFull}</strong>, ${cap(name)} appears to be the only ${stateFull} player showing up in this particular ${cat} snapshot, so there's no direct same-state peer group to size up here &mdash; the competition for them is really a national one, category-wide.`;
+
+  let milestoneP;
+  if(rank <= 20){
+    milestoneP = `On the ranking ladder, ${cap(name)} is already sitting inside the <strong>national top 20</strong> for ${cat} &mdash; this is elite company, the kind of position that starts opening doors to national camps, higher seeding at bigger tournaments, and closer looks from state and national selectors. The work from here is less about climbing and more about defending the spot and consistently backing it up.`;
+  } else if(rank <= 50){
+    milestoneP = `${cap(name)} is inside the <strong>national top 50</strong>, which is a genuinely strong position in a pool of ${poolSize}. The next realistic target is cracking the <strong>top 20</strong>; at this level that usually comes down to converting quarterfinal and semifinal results into titles at ranking tournaments, since the points gap between rank 50 and rank 20 is typically earned through 2-3 strong tournament runs rather than a single event.`;
+  } else {
+    const target = nearestUnreachedMilestone(rank);
+    const targetEntry = milestoneFor(cat, target);
+    const rankGap = rank - target;
+    const ptsGap = targetEntry ? Math.max(0, targetEntry[4] - pts) : null;
+    milestoneP = `To break into the <strong>top ${target}</strong> nationally in ${cat}, ${cap(name)} has real work ahead: roughly <strong>${rankGap} places</strong> to climb${ptsGap !== null ? `, and somewhere around <strong>${ptsGap.toFixed(2)} more ranking points</strong> to catch the player currently sitting at #${target}` : ''}. That gap isn't trivial, but it's also not as far as it looks on paper &mdash; junior rankings move quickly, and a couple of good tournament runs (a final or two, or a string of quarterfinal-plus finishes) can move a player 50 to 100 places in a single ranking update. The realistic path is picking up ranking points steadily at the next few AITA events rather than chasing one big result.`;
+  }
+
+  const caveatP = `<em>Worth being clear about what this reads from: only the single ${ASOF} snapshot. There's no accessible AITA ranking archive, so this can't say whether ${cap(name)} is trending up, holding steady, or coming off a higher peak &mdash; just where they stand today, and how far the next milestone is from here.</em>`;
+
+  return `<p>${percentileP}</p><p>${stateP}</p><p>${milestoneP}</p><p>${caveatP}</p>`;
+}
+
+function matchupNarrative(a, b, cat){
+  const poolSize = DATA[cat].length;
+  const rankGap = Math.abs(a[0] - b[0]);
+  const ptsGap = Math.abs(a[4] - b[4]);
+  const favorite = a[0] < b[0] ? a : b;
+  const underdog = a[0] < b[0] ? b : a;
+  const sameState = a[3] === b[3];
+
+  // Paragraph 1: headline verdict based on rank gap
+  let p1;
+  if(rankGap <= 15){
+    p1 = `This is a genuinely <strong>tight matchup on paper</strong> &mdash; just ${rankGap} places separate <strong>${cap(a[1])}</strong> (#${a[0]}) and <strong>${cap(b[1])}</strong> (#${b[0]}) in the current ${cat} rankings. At this margin, ranking alone can't reliably predict a winner; it would likely come down to form on the day, surface, and matchup style.`;
+  } else if(rankGap <= 60){
+    p1 = `<strong>${cap(favorite[1])}</strong> (#${favorite[0]}) holds a moderate ranking edge over <strong>${cap(underdog[1])}</strong> (#${underdog[0]}) &mdash; ${rankGap} places apart in ${cat}. That's a real but not overwhelming gap; upsets from this range happen regularly in junior tennis.`;
+  } else {
+    p1 = `<strong>${cap(favorite[1])}</strong> (#${favorite[0]}) is the clear favorite by current national ranking, sitting ${rankGap} places ahead of <strong>${cap(underdog[1])}</strong> (#${underdog[0]}) in ${cat}. A gap this size usually reflects a meaningful difference in tournament results over the current ranking period.`;
+  }
+
+  // Paragraph 2: points context
+  const p2 = `Looking at ranking points rather than position: <strong>${cap(a[1])}</strong> has ${a[4]} points and <strong>${cap(b[1])}</strong> has ${b[4]} &mdash; a gap of ${ptsGap.toFixed(2)}. ${cap(a[1])} sits in the "${ordinalPercentile(a[0], poolSize)}" band of the ${poolSize}-player ${cat} pool, while ${cap(b[1])} is "${ordinalPercentile(b[0], poolSize)}". ${ptsGap < 20 ? 'A points gap this small can flip with a single good tournament result.' : 'That points cushion suggests the gap is built on a string of results, not a single event.'}`;
+
+  // Paragraph 3: state / context
+  const p3 = sameState
+    ? `Both players represent <strong>${a[3]}</strong>, so beyond the national picture this would also be a state rivalry &mdash; the kind of match that often carries extra intensity at zonal and state-ranking tournaments.`
+    : `They represent different states &mdash; ${a[3]} and ${b[3]} &mdash; so this reads as a purely national-ranking matchup rather than a regional rivalry.`;
+
+  // Paragraph 4: explicit honesty about missing history
+  const p4 = `<em>What this preview does <strong>not</strong> include: highest-ever rank, career trajectory, or head-to-head history. AITA doesn't publish an accessible ranking archive or match results database, so this tool only has the single ${ASOF} snapshot for each category &mdash; there's no way to say whether either player has ranked higher before, is trending up or down, or has beaten the other previously. If you can share an older dated AITA ranking PDF for ${cat}, I can add real movement/highest-rank tracking on top of this.</em>`;
+
+  // Paragraph 5: individual pathways forward
+  const p5 = `Looking at where each player needs to go from here: ${milestoneSentence(a, cat)} ${milestoneSentence(b, cat)} Whichever of the two closes their respective gap faster over the next few ranking tournaments is the one likely to be pulling further ahead by the time these two would actually meet on court.`;
+
+  return `<p>${p1}</p><p>${p2}</p><p>${p3}</p><p>${p5}</p><p>${p4}</p>`;
+}
+
+function compare(){
+  if(!cat2Select.value){ document.getElementById('compareResult').innerHTML = `<div class="miss">Rankings are still loading &mdash; try again in a moment.</div>`; return; }
+  const cat = cat2Select.value;
+  const qA = document.getElementById('aitaA').value.trim();
+  const qB = document.getElementById('aitaB').value.trim();
+  const resultEl = document.getElementById('compareResult');
+  if(!qA || !qB){ resultEl.innerHTML = `<div class="miss">Enter both players' AITA numbers or names to compare.</div>`; return; }
+  const d = DATA[cat];
+  const resA = resolveOne(qA, d);
+  const resB = resolveOne(qB, d);
+
+  if(resA.matches && resA.matches.length > 1){
+    resultEl.innerHTML = `<div class="miss">Multiple matches for "${qA}". Pick one: <ul>${resA.matches.map(p=>`<li>${cap(p[1])} &mdash; #${p[0]}, AITA ${p[2]}</li>`).join('')}</ul></div>`;
+    return;
+  }
+  if(resB.matches && resB.matches.length > 1){
+    resultEl.innerHTML = `<div class="miss">Multiple matches for "${qB}". Pick one: <ul>${resB.matches.map(p=>`<li>${cap(p[1])} &mdash; #${p[0]}, AITA ${p[2]}</li>`).join('')}</ul></div>`;
+    return;
+  }
+  const a = resA.hit, b = resB.hit;
+  if(!a || !b){
+    const missing = [!a ? qA : null, !b ? qB : null].filter(Boolean).join(' and ');
+    resultEl.innerHTML = `<div class="miss">Couldn't find "${missing}" in ${cat}'s top ${d.length}.</div>`;
+    return;
+  }
+  const aWins = a[0] < b[0];
+  const rankGap = Math.abs(a[0]-b[0]);
+  const ptsGap = Math.abs(a[4]-b[4]).toFixed(2);
+  resultEl.innerHTML = `
+    <div class="compare-wrap">
+      <div class="compare-col ${aWins ? 'winner' : ''}">
+        <div class="rank">#${a[0]}</div>
+        <div class="name">${cap(a[1])}</div>
+        <div class="pts">${a[3]} &middot; ${a[4]} pts</div>
+      </div>
+      <div class="vs">VS</div>
+      <div class="compare-col ${!aWins ? 'winner' : ''}">
+        <div class="rank">#${b[0]}</div>
+        <div class="name">${cap(b[1])}</div>
+        <div class="pts">${b[3]} &middot; ${b[4]} pts</div>
+      </div>
+    </div>
+    <div class="preview">
+      ${matchupNarrative(a, b, cat)}
+      <div class="stat-grid">
+        <div><div class="stat-label">Rank gap</div><div class="stat-val">${rankGap}</div></div>
+        <div><div class="stat-label">Points gap</div><div class="stat-val">${ptsGap}</div></div>
+        <div><div class="stat-label">Snapshot date</div><div class="stat-val" style="font-size:0.85rem;">${ASOF}</div></div>
+      </div>
+    </div>
+  `;
+}
+</script>
+</body>
+</html>
