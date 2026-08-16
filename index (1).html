@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AITA Rank Finder</title>
+<style>
+  :root{
+    --bg: #0a0c0a;
+    --bg-edge: #000000;
+    --panel: #141712;
+    --panel-alt: #1b201a;
+    --court: #0e2b1f;
+    --court-light: #1b4433;
+    --line: #2a2f28;
+    --ink: #e9ece5;
+    --muted: #92998e;
+    --gold: #c9a24a;
+    --rose-gold: #cf9d94;
+    --rose-gold-dim: #8a6560;
+    --accent: #3f7a5a;
+    --accent-dark: #2a5842;
+    --danger: #a35a42;
+    --danger-bg: #241c19;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family: 'Georgia', 'Iowan Old Style', serif;
+    color: var(--ink);
+    background-color: var(--bg);
+    background-image:
+      radial-gradient(ellipse 90% 70% at 50% 0%, rgba(255,255,255,0.03) 0%, transparent 60%),
+      radial-gradient(ellipse 140% 110% at 50% 40%, var(--bg) 0%, var(--bg) 45%, var(--bg-edge) 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+  header{
+    background: linear-gradient(180deg, var(--court) 0%, #0a1a13 100%);
+    color: var(--ink);
+    padding: 2.2rem 1.5rem 2.6rem;
+    text-align:center;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+    background-image:
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 40px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 40px),
+      linear-gradient(180deg, var(--court) 0%, #0a1a13 100%);
+  }
+  header h1{
+    font-family: 'Trebuchet MS', sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    font-size: clamp(1.8rem, 5vw, 2.6rem);
+    margin: 0 0 0.4rem;
+  }
+  header h1 span{ background: linear-gradient(120deg, var(--gold) 0%, var(--rose-gold) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  header p{
+    margin: 0;
+    font-size: 0.95rem;
+    color: #a9b8ae;
+    max-width: 40rem;
+    margin-inline:auto;
+  }
+  main{
+    max-width: 820px;
+    margin: -1.6rem auto 3rem;
+    padding: 0 1.2rem;
+    position: relative;
+  }
+  .tabs{ display:flex; gap: 0.5rem; margin-bottom: 1rem; }
+  .tab{
+    flex:1; text-align:center; padding: 0.7rem; border-radius: 10px 10px 0 0;
+    background: #0e100d; color: var(--muted); font-family: 'Trebuchet MS', sans-serif;
+    font-weight:700; cursor:pointer; font-size: 0.9rem; border: 1px solid var(--line); border-bottom: none;
+  }
+  .tab.active{ background: var(--panel); color: var(--gold); box-shadow: 0 -6px 20px rgba(0,0,0,0.4), inset 0 2px 0 var(--rose-gold); }
+  .card{
+    background: var(--panel); border-radius: 14px;
+    box-shadow: 0 14px 40px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.03);
+    padding: 1.6rem; margin-bottom: 1.4rem; border: 1px solid var(--line);
+  }
+  label{ display:block; font-family: 'Trebuchet MS', sans-serif; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 0.4rem; }
+  select, input{
+    width:100%; padding: 0.7rem 0.8rem; border-radius: 8px; border: 1.5px solid var(--line);
+    font-size: 1rem; font-family: inherit; background: var(--panel-alt); color: var(--ink);
+  }
+  select:focus, input:focus{ outline: 1.5px solid var(--accent); border-color: var(--accent); }
+  .row{ display:flex; gap: 0.9rem; flex-wrap: wrap; }
+  .row > div{ flex: 1 1 220px; }
+  button{
+    margin-top: 1.1rem; width: 100%; padding: 0.85rem;
+    background: linear-gradient(180deg, var(--accent) 0%, var(--accent-dark) 100%);
+    color: #f2f5f0; border: 1px solid rgba(0,0,0,0.3); border-radius: 8px;
+    font-family: 'Trebuchet MS', sans-serif; font-weight: 700; font-size: 1rem;
+    cursor: pointer; transition: filter 0.15s ease; box-shadow: 0 6px 16px rgba(0,0,0,0.45);
+  }
+  button:hover{ filter: brightness(1.12); }
+  #result{ margin-top: 1.2rem; }
+  .hit{ border-left: 5px solid var(--rose-gold); background: var(--panel-alt); padding: 1.1rem 1.2rem; border-radius: 8px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.03); margin-bottom: 0.7rem; }
+  .hit .rank{ font-family:'Trebuchet MS', sans-serif; font-size: 2.2rem; font-weight: 800; color: var(--gold); line-height: 1; }
+  .hit .rank sup{ font-size: 1rem; color: var(--muted); }
+  .hit .name{ font-size: 1.15rem; font-weight: 700; margin: 0.3rem 0 0.1rem; color: var(--ink); }
+  .hit .meta{ color: var(--muted); font-size: 0.92rem; }
+  .miss{ border-left: 5px solid var(--danger); background: var(--danger-bg); padding: 1.1rem 1.2rem; border-radius: 8px; color: #d3ada0; }
+  .miss a{ color: var(--gold); }
+  .asof{ font-size: 0.82rem; color: var(--muted); margin-top: 0.6rem; text-align:right; }
+  .note{ font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
+  .note a{ color: var(--gold); }
+  footer{ text-align:center; color: var(--muted); font-size: 0.8rem; padding-bottom: 2rem; }
+  table{ width:100%; border-collapse:collapse; font-size:0.92rem; }
+  tr{ border-bottom:1px solid var(--line); }
+  td{ padding:0.35rem 0; color: var(--ink); }
+  .compare-wrap{ display:flex; gap:1rem; flex-wrap:wrap; margin-top:1rem; }
+  .compare-col{ flex:1 1 240px; background:var(--panel-alt); border-radius:10px; padding:1rem; text-align:center; border:1px solid var(--line); }
+  .compare-col .rank{ font-family:'Trebuchet MS',sans-serif; font-size:2rem; font-weight:800; color:var(--gold); }
+  .compare-col .name{ font-weight:700; margin:0.3rem 0; color: var(--ink); }
+  .compare-col .pts{ color:var(--muted); font-size:0.85rem; }
+  .vs{ display:flex; align-items:center; justify-content:center; font-family:'Trebuchet MS',sans-serif; font-weight:800; color:var(--gold); font-size:1.3rem; }
+  .winner{ box-shadow: 0 0 0 3px var(--rose-gold) inset; }
+  .searchbox{ position:relative; }
+  .suggestions{ position:absolute; top:100%; left:0; right:0; background:var(--panel-alt); border:1px solid var(--line); border-top:none; border-radius:0 0 8px 8px; max-height:220px; overflow-y:auto; z-index:10; display:none; box-shadow:0 12px 24px rgba(0,0,0,0.5); }
+  .suggestions div{ padding:0.55rem 0.8rem; cursor:pointer; font-size:0.88rem; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; gap:0.5rem; color: var(--ink); }
+  .suggestions div:hover{ background: var(--court); }
+  .suggestions .s-id{ color:var(--muted); font-variant-numeric:tabular-nums; }
+  .preview{ margin-top:1.4rem; background: linear-gradient(135deg, var(--court) 0%, #0a1712 100%); color: #dfe6e0; border-radius:12px; padding:1.2rem 1.4rem; line-height:1.55; font-size:0.95rem; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+  .preview strong{ color: var(--gold); }
+  .stat-grid{ display:flex; gap:1rem; margin-top:0.9rem; flex-wrap:wrap; }
+  .stat-grid div{ flex:1 1 140px; background:rgba(255,255,255,0.05); border-radius:8px; padding:0.6rem 0.8rem; }
+  .stat-grid .stat-label{ font-family:'Trebuchet MS',sans-serif; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.06em; opacity:0.75; }
+  .stat-grid .stat-val{ font-family:'Trebuchet MS',sans-serif; font-weight:800; font-size:1.1rem; }
+  .rank-holders .hit + .hit{ margin-top:0.6rem; }
+  .tied-scroll-wrap{ position:relative; margin-bottom:0.9rem; }
+  .tied-scroll{ display:flex; gap:0.9rem; overflow-x:auto; scroll-snap-type:x proximity; padding: 0.2rem 0.2rem 0.8rem; scrollbar-width: thin; scrollbar-color: var(--rose-gold-dim) var(--panel-alt); }
+  .tied-scroll::-webkit-scrollbar{ height:8px; }
+  .tied-scroll::-webkit-scrollbar-track{ background: var(--panel-alt); border-radius:8px; }
+  .tied-scroll::-webkit-scrollbar-thumb{ background: var(--rose-gold-dim); border-radius:8px; }
+  .tied-card{ flex: 0 0 220px; scroll-snap-align: start; background: var(--panel-alt); border: 1px solid var(--line); border-top: 3px solid var(--rose-gold); border-radius: 10px; padding: 1rem; }
+  .tied-card .rank{ font-family:'Trebuchet MS',sans-serif; font-size:1.7rem; font-weight:800; color:var(--gold); line-height:1; }
+  .tied-card .name{ font-weight:700; margin:0.35rem 0 0.15rem; font-size:0.98rem; }
+  .tied-card .meta{ color:var(--muted); font-size:0.82rem; line-height:1.4; }
+  .tied-label{ font-family:'Trebuchet MS',sans-serif; font-size:0.8rem; color: var(--rose-gold); margin-bottom:0.5rem; display:flex; align-items:center; gap:0.4rem; }
+  .tied-label::after{ content:'\2192'; opacity:0.6; }
+
+  /* Playstyle quiz — now a normal tab, styled like the rest of the card content */
+  .quiz-progress-track{ height:4px; background:var(--panel-alt); border-radius:2px; margin:0.8rem 0 1.2rem; overflow:hidden; }
+  .quiz-progress-fill{ height:100%; background: linear-gradient(90deg, var(--gold), var(--rose-gold)); border-radius:2px; }
+  .quiz-q{ font-size:1.05rem; font-weight:700; margin:0 0 1rem; color:var(--ink); }
+  .quiz-opt{ display:block; width:100%; text-align:left; background:var(--panel-alt); border:1px solid var(--line); color:var(--ink); margin:0 0 0.6rem; font-weight:400; font-family:'Georgia',serif; font-size:0.95rem; padding:0.75rem 0.9rem; box-shadow:none; }
+  .quiz-opt:hover{ border-color: var(--rose-gold); filter:none; }
+  .quiz-result{ text-align:center; padding:0.5rem 0; }
+  .quiz-result .label{ font-size:0.8rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; }
+  .quiz-result .style-name{ font-family:'Trebuchet MS',sans-serif; font-size:1.5rem; font-weight:800; color:var(--gold); margin:0.3rem 0 0.8rem; }
+  .quiz-result p{ line-height:1.6; color:var(--ink); }
+</style>
+</head>
+<body>
+<header>
+  <h1>AITA <span>Rank Finder</span></h1>
+  <p>Enter your AITA registration number to find your national junior ranking, or compare two players head-to-head.</p>
+</header>
+
+<main>
+  <div class="tabs">
+    <div class="tab active" id="tab-lookup" onclick="switchTab('lookup')">Find My Rank</div>
+    <div class="tab" id="tab-compare" onclick="switchTab('compare')">Compare Players</div>
+    <div class="tab" id="tab-quiz" onclick="switchTab('quiz')">Find Your Playstyle</div>
+  </div>
+
+  <div id="view-lookup">
+    <div class="card">
+      <div class="row">
+        <div>
+          <label for="cat">Category</label>
+          <select id="cat"></select>
+        </div>
+        <div class="searchbox">
+          <label for="aita">AITA Number, Name, or Rank #</label>
+          <input id="aita" type="text" placeholder="e.g. 437432, a name, or just 42" autocomplete="off">
+          <div class="suggestions" id="suggest-aita"></div>
+        </div>
+      </div>
+      <button onclick="lookup()">Find my rank</button>
+      <div id="result"></div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0;font-family:'Trebuchet MS',sans-serif;">Leaderboard (top 20)</h3>
+      <div id="board"><div class="asof">Loading rankings&hellip;</div></div>
+    </div>
+  </div>
+
+  <div id="view-compare" style="display:none;">
+    <div class="card">
+      <div class="row">
+        <div>
+          <label for="cat2">Category</label>
+          <select id="cat2"></select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="searchbox">
+          <label for="aitaA">Player A &mdash; Number or Name</label>
+          <input id="aitaA" type="text" placeholder="e.g. 437432 or name" autocomplete="off">
+          <div class="suggestions" id="suggest-aitaA"></div>
+        </div>
+        <div class="searchbox">
+          <label for="aitaB">Player B &mdash; Number or Name</label>
+          <input id="aitaB" type="text" placeholder="e.g. 438109 or name" autocomplete="off">
+          <div class="suggestions" id="suggest-aitaB"></div>
+        </div>
+      </div>
+      <button onclick="compare()">Compare</button>
+      <div id="compareResult"></div>
+    </div>
+  </div>
+
+  <div id="view-quiz" style="display:none;">
+    <div class="card">
+      <h3 style="margin-top:0;font-family:'Trebuchet MS',sans-serif;">Find Your Playstyle</h3>
+      <p class="note" style="margin-bottom:1rem;">10 quick questions, picked at random from a pool of 130 &mdash; refresh or retake for a different set every time.</p>
+      <div id="quiz-app"></div>
+    </div>
+  </div>
+
+  <div class="card note">
+    <p><strong>About this data.</strong> This is the official AITA junior national ranking list, sourced from AITA for Boys and Girls U-14 and U-16, and covers the full published list in each category.</p>
+    <p><strong>This page updates automatically.</strong> A scheduled check runs regularly and republishes fresh data whenever AITA's rankings change &mdash; nothing for you to do.</p>
+    <p><strong>Three ways to search:</strong> a full or partial name (pick from the dropdown), an AITA registration number, or just a rank number (like "42") to see who currently holds that spot.</p>
+    <p><strong>About the Compare tab's commentary:</strong> the "matchup preview" is generated from each player's current rank and points gap only. AITA doesn't publish match history or head-to-head records, so this reads today's standing, not a prediction backed by real results.</p>
+    <p>For the live, always-current list, see <a href="https://aitatennis.com/playerranking/" target="_blank" rel="noopener">aitatennis.com/playerranking</a>.</p>
+  </div>
+</main>
+
+<footer>Built from official AITA ranking data. Not affiliated with AITA.</footer>
+
+<script>
+let DATA = {};
+let ASOF = "";
+
+const STATE_NAMES = {
+  MH:'Maharashtra', KA:'Karnataka', PB:'Punjab', AS:'Assam', TS:'Telangana', DL:'Delhi',
+  MP:'Madhya Pradesh', RJ:'Rajasthan', TN:'Tamil Nadu', WB:'West Bengal', HR:'Haryana',
+  GJ:'Gujarat', KL:'Kerala', AP:'Andhra Pradesh', OD:'Odisha', UP:'Uttar Pradesh',
+  UK:'Uttarakhand', JK:'Jammu & Kashmir', CG:'Chhattisgarh', JH:'Jharkhand', BR:'Bihar',
+  PY:'Puducherry', MZ:'Mizoram', ML:'Meghalaya', NL:'Nagaland', HP:'Himachal Pradesh',
+  MN:'Manipur', GA:'Goa', CH:'Chandigarh'
+};
+function stateName(code){ return STATE_NAMES[code] || code; }
+
+function ordinalPercentile(rank, poolSize){
+  const pct = (rank / poolSize) * 100;
+  if(pct <= 5) return 'elite, top-5% nationally';
+  if(pct <= 15) return 'firmly in the national top tier';
+  if(pct <= 40) return 'solidly mid-upper pack nationally';
+  return 'in the wider chasing pack nationally';
+}
+
+function cap(s){ return s.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()); }
+
+function populateSelect(sel){
+  sel.innerHTML = '';
+  Object.keys(DATA).forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c; opt.textContent = c + ' (' + DATA[c].length + ' players)';
+    sel.appendChild(opt);
+  });
+}
+
+const catSelect = document.getElementById('cat');
+const cat2Select = document.getElementById('cat2');
+
+function renderBoard(){
+  const cat = catSelect.value;
+  const d = DATA[cat];
+  let html = `<div class="asof">Ranking as of ${ASOF}</div><table>`;
+  d.slice(0,20).forEach(p => {
+    html += `<tr>
+      <td style="width:2.4rem;color:var(--muted);">${p[0]}</td>
+      <td>${cap(p[1])}</td>
+      <td style="color:var(--muted);width:3rem;">${p[3]}</td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums;">${p[4]}</td>
+    </tr>`;
+  });
+  html += `</table>`;
+  document.getElementById('board').innerHTML = html;
+}
+
+function switchTab(tab){
+  document.getElementById('tab-lookup').classList.toggle('active', tab==='lookup');
+  document.getElementById('tab-compare').classList.toggle('active', tab==='compare');
+  document.getElementById('tab-quiz').classList.toggle('active', tab==='quiz');
+  document.getElementById('view-lookup').style.display = tab==='lookup' ? 'block' : 'none';
+  document.getElementById('view-compare').style.display = tab==='compare' ? 'block' : 'none';
+  document.getElementById('view-quiz').style.display = tab==='quiz' ? 'block' : 'none';
+  if(tab === 'quiz' && window.newQuiz) newQuiz();
+}
+
+function findMatches(query, catData){
+  const q = query.trim();
+  if(!q) return [];
+  if(/^\d+$/.test(q)){
+    const hit = catData.find(p => p[2] === q);
+    return hit ? [hit] : [];
+  }
+  const ql = q.toLowerCase();
+  return catData.filter(p => p[1].toLowerCase().includes(ql)).slice(0, 8);
+}
+
+function lookupByRank(rankNum, catData){
+  const holders = catData.filter(p => p[0] === rankNum);
+  if(holders.length) return { holders, exact: true, rankNum };
+  const maxRank = catData[catData.length - 1][0];
+  let low = rankNum, high = rankNum;
+  while(low >= 1 || high <= maxRank){
+    low--; high++;
+    if(low >= 1){
+      const h = catData.filter(p => p[0] === low);
+      if(h.length) return { holders: h, exact: false, rankNum: low, requested: rankNum };
+    }
+    if(high <= maxRank){
+      const h = catData.filter(p => p[0] === high);
+      if(h.length) return { holders: h, exact: false, rankNum: high, requested: rankNum };
+    }
+    if(low < 1 && high > maxRank) break;
+  }
+  return null;
+}
+
+function wireAutocomplete(inputId, suggestId, catSelectEl, onPick){
+  const input = document.getElementById(inputId);
+  const box = document.getElementById(suggestId);
+  input.addEventListener('input', () => {
+    const q = input.value.trim();
+    if(q.length < 2 || /^\d+$/.test(q)){ box.style.display='none'; return; }
+    const cat = catSelectEl.value;
+    const matches = findMatches(q, DATA[cat]);
+    if(!matches.length){ box.style.display='none'; return; }
+    box.innerHTML = matches.map(p => `<div data-id="${p[2]}"><span>${cap(p[1])}</span><span class="s-id">#${p[0]} &middot; ${p[2]}</span></div>`).join('');
+    box.style.display = 'block';
+    box.querySelectorAll('div').forEach(el => {
+      el.addEventListener('click', () => {
+        input.value = el.getAttribute('data-id');
+        box.style.display = 'none';
+        if(onPick) onPick();
+      });
+    });
+  });
+  document.addEventListener('click', (e) => {
+    if(e.target !== input) box.style.display = 'none';
+  });
+}
+
+function resolveOne(query, catData){
+  const matches = findMatches(query, catData);
+  if(matches.length === 1) return { hit: matches[0] };
+  if(matches.length === 0) return { hit: null, matches: [] };
+  return { hit: null, matches };
+}
+
+function milestoneFor(cat, targetRank){
+  const d = DATA[cat];
+  let entry = d.find(p=>p[0]===targetRank);
+  if(!entry){
+    const below = d.filter(p=>p[0]<=targetRank);
+    entry = below.length ? below[below.length-1] : d[d.length-1];
+  }
+  return entry;
+}
+
+function nearestUnreachedMilestone(rank){
+  const targets = [200, 100, 50].filter(m => m < rank).sort((a,b)=>b-a);
+  return targets.length ? targets[0] : 20;
+}
+
+function milestoneSentence(hit, cat){
+  const [rank, name] = hit;
+  if(rank <= 50) return `<strong>${cap(name)}</strong> is already inside the national top 50 in ${cat}.`;
+  const target = nearestUnreachedMilestone(rank);
+  const targetEntry = milestoneFor(cat, target);
+  const rankGap = rank - target;
+  const ptsGap = targetEntry ? Math.max(0, targetEntry[4] - hit[4]) : null;
+  return `<strong>${cap(name)}</strong> sits ${rankGap} places outside the top ${target}${ptsGap !== null ? ` (roughly ${ptsGap.toFixed(2)} points behind the current #${target})` : ''}.`;
+}
+
+function lookupNarrative(hit, cat){
+  const poolSize = DATA[cat].length;
+  const [rank, name, id, state, pts] = hit;
+  const stateFull = stateName(state);
+  const percentileBand = ordinalPercentile(rank, poolSize);
+
+  const stateMates = DATA[cat].filter(p => p[3] === state);
+  const stateRank = stateMates.findIndex(p => p[2] === id) + 1;
+  const stateCount = stateMates.length;
+
+  const percentileP = `<strong>${cap(name)}</strong> (AITA ${id}) currently sits at <strong>#${rank}</strong> of ${poolSize} ranked players in ${cat}, with ${pts} ranking points as of ${ASOF}. That places them ${percentileBand}.`;
+
+  const stateP = stateCount > 1
+    ? `Representing <strong>${stateFull}</strong>, ${cap(name)} is the <strong>#${stateRank} ranked player from the state</strong> out of ${stateCount} ${stateFull} players who show up in this ${cat} list. That's worth knowing because state and zonal ranking tournaments will often mean running into the same ${stateFull} names again and again &mdash; the players just above and below at #${Math.max(1, stateRank-1)} and #${stateRank+1} in the state list are effectively the immediate rivals to watch.`
+    : `Representing <strong>${stateFull}</strong>, ${cap(name)} appears to be the only ${stateFull} player showing up in this particular ${cat} snapshot, so there's no direct same-state peer group to size up here &mdash; the competition for them is really a national one, category-wide.`;
+
+  let milestoneP;
+  if(rank <= 20){
+    milestoneP = `On the ranking ladder, ${cap(name)} is already sitting inside the <strong>national top 20</strong> for ${cat} &mdash; this is elite company, the kind of position that starts opening doors to national camps, higher seeding at bigger tournaments, and closer looks from state and national selectors. The work from here is less about climbing and more about defending the spot and consistently backing it up.`;
+  } else if(rank <= 50){
+    milestoneP = `${cap(name)} is inside the <strong>national top 50</strong>, which is a genuinely strong position in a pool of ${poolSize}. The next realistic target is cracking the <strong>top 20</strong>; at this level that usually comes down to converting quarterfinal and semifinal results into titles at ranking tournaments, since the points gap between rank 50 and rank 20 is typically earned through 2-3 strong tournament runs rather than a single event.`;
+  } else {
+    const target = nearestUnreachedMilestone(rank);
+    const targetEntry = milestoneFor(cat, target);
+    const rankGap = rank - target;
+    const ptsGap = targetEntry ? Math.max(0, targetEntry[4] - pts) : null;
+    milestoneP = `To break into the <strong>top ${target}</strong> nationally in ${cat}, ${cap(name)} has real work ahead: roughly <strong>${rankGap} places</strong> to climb${ptsGap !== null ? `, and somewhere around <strong>${ptsGap.toFixed(2)} more ranking points</strong> to catch the player currently sitting at #${target}` : ''}. That gap isn't trivial, but it's also not as far as it looks on paper &mdash; junior rankings move quickly, and a couple of good tournament runs (a final or two, or a string of quarterfinal-plus finishes) can move a player 50 to 100 places in a single ranking update. The realistic path is picking up ranking points steadily at the next few AITA events rather than chasing one big result.`;
+  }
+
+  const caveatP = `<em>Worth being clear about what this reads from: only the ${ASOF} snapshot. There's no accessible AITA ranking archive, so this can't say whether ${cap(name)} is trending up, holding steady, or coming off a higher peak &mdash; just where they stand today, and how far the next milestone is from here.</em>`;
+
+  return `<p>${percentileP}</p><p>${stateP}</p><p>${milestoneP}</p><p>${caveatP}</p>`;
+}
+
+function renderRankHolders(result, cat, d){
+  const { holders, exact, rankNum, requested } = result;
+  let html = '<div class="rank-holders">';
+  if(!exact){
+    html += `<div class="miss">No one holds exactly rank #${requested} in ${cat} (ties shift the numbering) &mdash; showing the nearest existing rank, #${rankNum}, instead.</div>`;
+  }
+  if(holders.length === 1){
+    const hit = holders[0];
+    html += `<div class="hit">
+      <div class="rank">#${hit[0]}<sup> of ${d.length} in ${cat}</sup></div>
+      <div class="name">${cap(hit[1])}</div>
+      <div class="meta">AITA ${hit[2]} &middot; ${hit[3]} &middot; ${hit[4]} points &middot; as of ${ASOF}</div>
+    </div>
+    <div class="preview">${lookupNarrative(hit, cat)}</div>`;
+  } else {
+    html += `<div class="tied-label">${holders.length} players are tied at #${rankNum} &mdash; scroll to see them all</div>`;
+    html += `<div class="tied-scroll-wrap"><div class="tied-scroll">`;
+    holders.forEach(hit => {
+      html += `<div class="tied-card">
+        <div class="rank">#${hit[0]}</div>
+        <div class="name">${cap(hit[1])}</div>
+        <div class="meta">AITA ${hit[2]}<br>${hit[3]} &middot; ${hit[4]} pts</div>
+      </div>`;
+    });
+    html += `</div></div>`;
+    html += `<div class="asof">Search any of these by name or AITA number for their full breakdown.</div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+function lookup(){
+  const resultElGuard = document.getElementById('result');
+  if(!catSelect.value){ resultElGuard.innerHTML = `<div class="miss">Rankings are still loading &mdash; try again in a moment.</div>`; return; }
+  const cat = catSelect.value;
+  const query = document.getElementById('aita').value.trim();
+  const resultEl = document.getElementById('result');
+  if(!query){ resultEl.innerHTML = `<div class="miss">Enter your AITA registration number, full name, or a rank number above to search.</div>`; return; }
+  const d = DATA[cat];
+
+  if(/^\d+$/.test(query) && query.length <= 4){
+    const rankNum = parseInt(query, 10);
+    const result = lookupByRank(rankNum, d);
+    if(result){
+      resultEl.innerHTML = renderRankHolders(result, cat, d);
+    } else {
+      resultEl.innerHTML = `<div class="miss">No rank near #${rankNum} exists in this ${cat} list (it only goes to #${d[d.length-1][0]}).</div>`;
+    }
+    return;
+  }
+
+  const { hit, matches } = resolveOne(query, d);
+  if(hit){
+    resultEl.innerHTML = `<div class="hit">
+      <div class="rank">#${hit[0]}<sup> of ${d.length} in ${cat}</sup></div>
+      <div class="name">${cap(hit[1])}</div>
+      <div class="meta">AITA ${hit[2]} &middot; ${hit[3]} &middot; ${hit[4]} points &middot; as of ${ASOF}</div>
+    </div>
+    <div class="preview">${lookupNarrative(hit, cat)}</div>`;
+  } else if(matches && matches.length > 1){
+    resultEl.innerHTML = `<div class="miss">Multiple players match "${query}" in ${cat}. Try the suggestions dropdown, or narrow with more of the name.<ul>${matches.map(p=>`<li>${cap(p[1])} &mdash; #${p[0]}, AITA ${p[2]}</li>`).join('')}</ul></div>`;
+  } else {
+    resultEl.innerHTML = `<div class="miss">Couldn't find "${query}" in the top ${d.length} of ${cat}. Check the <a href="https://aitatennis.com/playerranking/" target="_blank" rel="noopener">official AITA rankings</a> to confirm.</div>`;
+  }
+}
+
+function matchupNarrative(a, b, cat){
+  const poolSize = DATA[cat].length;
+  const rankGap = Math.abs(a[0] - b[0]);
+  const ptsGap = Math.abs(a[4] - b[4]);
+  const favorite = a[0] < b[0] ? a : b;
+  const underdog = a[0] < b[0] ? b : a;
+  const sameState = a[3] === b[3];
+
+  let p1;
+  if(rankGap <= 15){
+    p1 = `This is a genuinely <strong>tight matchup on paper</strong> &mdash; just ${rankGap} places separate <strong>${cap(a[1])}</strong> (#${a[0]}) and <strong>${cap(b[1])}</strong> (#${b[0]}) in the current ${cat} rankings. At this margin, ranking alone can't reliably predict a winner; it would likely come down to form on the day, surface, and matchup style.`;
+  } else if(rankGap <= 60){
+    p1 = `<strong>${cap(favorite[1])}</strong> (#${favorite[0]}) holds a moderate ranking edge over <strong>${cap(underdog[1])}</strong> (#${underdog[0]}) &mdash; ${rankGap} places apart in ${cat}. That's a real but not overwhelming gap; upsets from this range happen regularly in junior tennis.`;
+  } else {
+    p1 = `<strong>${cap(favorite[1])}</strong> (#${favorite[0]}) is the clear favorite by current national ranking, sitting ${rankGap} places ahead of <strong>${cap(underdog[1])}</strong> (#${underdog[0]}) in ${cat}. A gap this size usually reflects a meaningful difference in tournament results over the current ranking period.`;
+  }
+
+  const p2 = `Looking at ranking points rather than position: <strong>${cap(a[1])}</strong> has ${a[4]} points and <strong>${cap(b[1])}</strong> has ${b[4]} &mdash; a gap of ${ptsGap.toFixed(2)}. ${cap(a[1])} sits in the "${ordinalPercentile(a[0], poolSize)}" band of the ${poolSize}-player ${cat} pool, while ${cap(b[1])} is "${ordinalPercentile(b[0], poolSize)}". ${ptsGap < 20 ? 'A points gap this small can flip with a single good tournament result.' : 'That points cushion suggests the gap is built on a string of results, not a single event.'}`;
+
+  const p3 = sameState
+    ? `Both players represent <strong>${a[3]}</strong>, so beyond the national picture this would also be a state rivalry &mdash; the kind of match that often carries extra intensity at zonal and state-ranking tournaments.`
+    : `They represent different states &mdash; ${a[3]} and ${b[3]} &mdash; so this reads as a purely national-ranking matchup rather than a regional rivalry.`;
+
+  const p5 = `Looking at where each player needs to go from here: ${milestoneSentence(a, cat)} ${milestoneSentence(b, cat)} Whichever of the two closes their respective gap faster over the next few ranking tournaments is the one likely to be pulling further ahead by the time these two would actually meet on court.`;
+
+  const p4 = `<em>What this preview does <strong>not</strong> include: highest-ever rank, career trajectory, or head-to-head history. AITA doesn't publish an accessible ranking archive or match results database, so this tool only has the ${ASOF} snapshot for each category &mdash; there's no way to say whether either player has ranked higher before, is trending up or down, or has beaten the other previously. If you can share an older dated AITA ranking source for ${cat}, real movement/highest-rank tracking could be added on top of this.</em>`;
+
+  return `<p>${p1}</p><p>${p2}</p><p>${p3}</p><p>${p5}</p><p>${p4}</p>`;
+}
+
+function compare(){
+  if(!cat2Select.value){ document.getElementById('compareResult').innerHTML = `<div class="miss">Rankings are still loading &mdash; try again in a moment.</div>`; return; }
+  const cat = cat2Select.value;
+  const qA = document.getElementById('aitaA').value.trim();
+  const qB = document.getElementById('aitaB').value.trim();
+  const resultEl = document.getElementById('compareResult');
+  if(!qA || !qB){ resultEl.innerHTML = `<div class="miss">Enter both players' AITA numbers or names to compare.</div>`; return; }
+  const d = DATA[cat];
+  const resA = resolveOne(qA, d);
+  const resB = resolveOne(qB, d);
+
+  if(resA.matches && resA.matches.length > 1){
+    resultEl.innerHTML = `<div class="miss">Multiple matches for "${qA}". Pick one: <ul>${resA.matches.map(p=>`<li>${cap(p[1])} &mdash; #${p[0]}, AITA ${p[2]}</li>`).join('')}</ul></div>`;
+    return;
+  }
+  if(resB.matches && resB.matches.length > 1){
+    resultEl.innerHTML = `<div class="miss">Multiple matches for "${qB}". Pick one: <ul>${resB.matches.map(p=>`<li>${cap(p[1])} &mdash; #${p[0]}, AITA ${p[2]}</li>`).join('')}</ul></div>`;
+    return;
+  }
+  const a = resA.hit, b = resB.hit;
+  if(!a || !b){
+    const missing = [!a ? qA : null, !b ? qB : null].filter(Boolean).join(' and ');
+    resultEl.innerHTML = `<div class="miss">Couldn't find "${missing}" in ${cat}'s top ${d.length}.</div>`;
+    return;
+  }
+  const aWins = a[0] < b[0];
+  const rankGap = Math.abs(a[0]-b[0]);
+  const ptsGap = Math.abs(a[4]-b[4]).toFixed(2);
+  resultEl.innerHTML = `
+    <div class="compare-wrap">
+      <div class="compare-col ${aWins ? 'winner' : ''}">
+        <div class="rank">#${a[0]}</div>
+        <div class="name">${cap(a[1])}</div>
+        <div class="pts">${a[3]} &middot; ${a[4]} pts</div>
+      </div>
+      <div class="vs">VS</div>
+      <div class="compare-col ${!aWins ? 'winner' : ''}">
+        <div class="rank">#${b[0]}</div>
+        <div class="name">${cap(b[1])}</div>
+        <div class="pts">${b[3]} &middot; ${b[4]} pts</div>
+      </div>
+    </div>
+    <div class="preview">
+      ${matchupNarrative(a, b, cat)}
+      <div class="stat-grid">
+        <div><div class="stat-label">Rank gap</div><div class="stat-val">${rankGap}</div></div>
+        <div><div class="stat-label">Points gap</div><div class="stat-val">${ptsGap}</div></div>
+        <div><div class="stat-label">Snapshot date</div><div class="stat-val" style="font-size:0.85rem;">${ASOF}</div></div>
+      </div>
+    </div>
+  `;
+}
+
+function initApp(){
+  populateSelect(catSelect);
+  populateSelect(cat2Select);
+  catSelect.addEventListener('change', renderBoard);
+  renderBoard();
+  wireAutocomplete('aita', 'suggest-aita', catSelect, lookup);
+  wireAutocomplete('aitaA', 'suggest-aitaA', cat2Select, null);
+  wireAutocomplete('aitaB', 'suggest-aitaB', cat2Select, null);
+}
+
+async function loadData(){
+  try{
+    const res = await fetch('data.json');
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    DATA = json.categories;
+    ASOF = json.asOf;
+    initApp();
+  } catch(err){
+    document.getElementById('board').innerHTML =
+      `<div class="miss">Couldn't load ranking data (data.json). If you're testing locally by double-clicking the HTML file, browsers block that &mdash; run a local server or view it on the deployed site instead. Details: ${err.message}</div>`;
+  }
+}
+loadData();
+
+/* ===== Playstyle quiz =====
+   Lives in its own tab ("Find Your Playstyle"). Each time the tab is opened
+   (including switching to it again, or refreshing the page), 10 questions
+   are randomly drawn from a pool of 130 so the quiz feels different every time. */
+(function(){
+
+  const POOL = [
+    {q:'A short ball lands in the middle. What do you do?', opts:[{t:'You smash it hard for a winner',s:'aggressive'}, {t:'You run in and get to the net',s:'servevolley'}, {t:'You hit it deep and stay back',s:'counter'}, {t:'You think about the best spot to hit it',s:'allcourt'}, {t:'You hit it with lots of spin and stay patient',s:'grinder'}]},
+    {q:'What is your favorite shot to hit?', opts:[{t:'A hard, flat forehand',s:'aggressive'}, {t:'A soft volley at the net',s:'servevolley'}, {t:'A shot that passes the other player',s:'counter'}, {t:'A tricky drop shot',s:'allcourt'}, {t:'A high shot with tons of spin',s:'grinder'}]},
+    {q:'It\'s break point and you\'re serving. What do you do?', opts:[{t:'Hit your biggest, fastest serve',s:'aggressive'}, {t:'Serve and run straight to the net',s:'servevolley'}, {t:'Hit a safe serve you trust',s:'counter'}, {t:'Do whatever feels right in the moment',s:'allcourt'}, {t:'Hit a high, spinny serve to be safe',s:'grinder'}]},
+    {q:'How long do you like a point to be?', opts:[{t:'Short, 3 hits or less',s:'aggressive'}, {t:'Short, then I finish at the net',s:'servevolley'}, {t:'As long as it takes to win it',s:'counter'}, {t:'However long the point needs to be',s:'allcourt'}, {t:'Super long, I love a big rally',s:'grinder'}]},
+    {q:'On practice day, what do you work on the most?', opts:[{t:'Hitting the ball harder',s:'aggressive'}, {t:'Volleys and net skills',s:'servevolley'}, {t:'Being quick and ready for anything',s:'counter'}, {t:'A little bit of everything',s:'allcourt'}, {t:'Getting in better shape',s:'grinder'}]},
+    {q:'When are you the most dangerous on court?', opts:[{t:'When I\'m hitting hard and taking control',s:'aggressive'}, {t:'When I\'m at the net',s:'servevolley'}, {t:'When my opponent runs out of ideas',s:'counter'}, {t:'When I can tell what they need next',s:'allcourt'}, {t:'When the match goes on forever',s:'grinder'}]},
+    {q:'You\'re playing someone who hits really hard. What do you do?', opts:[{t:'Hit even harder back',s:'aggressive'}, {t:'Rush the net so they can\'t hit as hard',s:'servevolley'}, {t:'Use their power against them',s:'counter'}, {t:'Mix it up to throw off their rhythm',s:'allcourt'}, {t:'Just keep the ball in play and outlast them',s:'grinder'}]},
+    {q:'How do you feel about playing on clay courts?', opts:[{t:'Not my favorite, I like it fast',s:'aggressive'}, {t:'Not my favorite, harder to finish points',s:'servevolley'}, {t:'I love it, more time to react',s:'counter'}, {t:'Doesn\'t matter, I do fine on any court',s:'allcourt'}, {t:'I love it, I could rally all day',s:'grinder'}]},
+    {q:'Pick the pro player style you like best.', opts:[{t:'Hits flat and hard, ends points fast',s:'aggressive'}, {t:'Old-school player who rushes the net',s:'servevolley'}, {t:'Amazing defender who turns defense into offense',s:'counter'}, {t:'Can play any way and beat anyone',s:'allcourt'}, {t:'Never gets tired, wins by outlasting people',s:'grinder'}]},
+    {q:'What is your biggest strength?', opts:[{t:'Power',s:'aggressive'}, {t:'Good hands at the net',s:'servevolley'}, {t:'Speed and quick thinking',s:'counter'}, {t:'I can change my game plan easily',s:'allcourt'}, {t:'I never get tired and never give up',s:'grinder'}]},
+    {q:'It\'s a tiebreak. What\'s going through your head?', opts:[{t:'Go big, take the risk',s:'aggressive'}, {t:'Find a way to get to the net',s:'servevolley'}, {t:'Stay calm and let them mess up',s:'counter'}, {t:'Read the moment and adjust',s:'allcourt'}, {t:'Just don\'t be the first one to crack',s:'grinder'}]},
+    {q:'What does your coach tell you the most?', opts:[{t:'Slow down a little, don\'t go so big',s:'aggressive'}, {t:'Come to the net more',s:'servevolley'}, {t:'Be more active, don\'t just wait',s:'counter'}, {t:'Trust yourself more',s:'allcourt'}, {t:'Look for chances to finish the point',s:'grinder'}]},
+    {q:'It\'s windy and the conditions are tricky. What do you do?', opts:[{t:'Just hit through it hard',s:'aggressive'}, {t:'Get to the net fast so wind matters less',s:'servevolley'}, {t:'Slow it down and let the wind cause mistakes',s:'counter'}, {t:'Change my shots based on the wind',s:'allcourt'}, {t:'Keep grinding, it evens out eventually',s:'grinder'}]},
+    {q:'How do you usually return serve?', opts:[{t:'Hit it hard and flat for a winner',s:'aggressive'}, {t:'Chip it short then run to the net',s:'servevolley'}, {t:'Hit it deep and safe to start the point even',s:'counter'}, {t:'It depends on the serve I get',s:'allcourt'}, {t:'Hit it high and deep to buy time',s:'grinder'}]},
+    {q:'How would you rather win a match?', opts:[{t:'Fast and easy, like 6-2 6-1',s:'aggressive'}, {t:'Win by controlling the net',s:'servevolley'}, {t:'A close, tough battle like 7-6 7-6',s:'counter'}, {t:'However it happens, I just want the win',s:'allcourt'}, {t:'A super long match, even 3 hours',s:'grinder'}]},
+    {q:'How would you describe the way you move on court?', opts:[{t:'Quick first step, then I set up to hit hard',s:'aggressive'}, {t:'Quick and smooth into the net',s:'servevolley'}, {t:'Fast side to side, I cover everything',s:'counter'}, {t:'Smooth and easy to change directions',s:'allcourt'}, {t:'I never stop moving, ever',s:'grinder'}]},
+    {q:'You\'re playing someone who loves drop shots. What do you do?', opts:[{t:'Punish any short ball I get',s:'aggressive'}, {t:'Guess it coming and beat them to the net',s:'servevolley'}, {t:'Sprint and get it back anyway',s:'counter'}, {t:'Hit some drop shots of my own back',s:'allcourt'}, {t:'Chase down every single ball, no matter what',s:'grinder'}]},
+    {q:'What do you focus on when warming up?', opts:[{t:'Big swings, feeling powerful early',s:'aggressive'}, {t:'Volleys and shots above my head',s:'servevolley'}, {t:'Quick steps and fast reactions',s:'counter'}, {t:'A bit of every shot',s:'allcourt'}, {t:'Long steady rallies to get in a rhythm',s:'grinder'}]},
+    {q:'You\'re tired in the third set. What do you do?', opts:[{t:'Go for bigger shots to end points quicker',s:'aggressive'}, {t:'Rush the net even more than usual',s:'servevolley'}, {t:'Just keep the ball in and stay steady',s:'counter'}, {t:'Keep things simple and play smart',s:'allcourt'}, {t:'This is when I feel my best, honestly',s:'grinder'}]},
+    {q:'If tennis had no time limit, what would you do?', opts:[{t:'Still try to end things fast, that\'s just me',s:'aggressive'}, {t:'Still try to get to the net quickly',s:'servevolley'}, {t:'Wait for the perfect moment to strike',s:'counter'}, {t:'Just play it as it comes',s:'allcourt'}, {t:'Happily play for hours and hours',s:'grinder'}]},
+    {q:'What kind of doubles partner would you want?', opts:[{t:'Someone big and aggressive like me',s:'aggressive'}, {t:'Someone who also loves the net',s:'servevolley'}, {t:'Someone steady who doesn\'t make mistakes',s:'counter'}, {t:'Anyone, I can adjust to their style',s:'allcourt'}, {t:'Someone who also never gets tired',s:'grinder'}]},
+    {q:'What annoys you most in a match?', opts:[{t:'People who just keep the ball in and never miss',s:'aggressive'}, {t:'People who never come to the net',s:'servevolley'}, {t:'Big hitters who rush me',s:'counter'}, {t:'Players who only know one way to play',s:'allcourt'}, {t:'People who quit trying during long rallies',s:'grinder'}]},
+    {q:'What\'s your dream practice partner like?', opts:[{t:'Someone who can handle my pace',s:'aggressive'}, {t:'Someone who gives me easy shots to attack at the net',s:'servevolley'}, {t:'A big hitter so I get better at defense',s:'counter'}, {t:'Anyone, I can adjust to anyone',s:'allcourt'}, {t:'Someone with just as much energy as me',s:'grinder'}]},
+    {q:'After losing a close match, what do you usually think?', opts:[{t:'I should have gone for more',s:'aggressive'}, {t:'I should have come to the net more',s:'servevolley'}, {t:'I should have stayed patient longer',s:'counter'}, {t:'I should have read the match better',s:'allcourt'}, {t:'I should have outlasted them',s:'grinder'}]},
+    {q:'How would you describe your serve?', opts:[{t:'Big and fast',s:'aggressive'}, {t:'Just good enough, then I run to the net',s:'servevolley'}, {t:'Safe and steady so I don\'t give away points',s:'counter'}, {t:'It changes depending on what I need',s:'allcourt'}, {t:'High and spinny to set up the point',s:'grinder'}]},
+    {q:'You\'re playing a lefty for the first time. What do you do?', opts:[{t:'Just hit my normal game, hard and fast',s:'aggressive'}, {t:'Look for chances to get to net early',s:'servevolley'}, {t:'Watch and adjust as the match goes on',s:'counter'}, {t:'Try different things until something works',s:'allcourt'}, {t:'Just keep rallying and figure it out slowly',s:'grinder'}]},
+    {q:'How do you feel about playing indoors?', opts:[{t:'I love it, the ball moves fast',s:'aggressive'}, {t:'I love it, easier to close out points at net',s:'servevolley'}, {t:'It\'s fine, doesn\'t change much for me',s:'counter'}, {t:'Doesn\'t matter, I adjust either way',s:'allcourt'}, {t:'A bit less fun, I like long outdoor battles',s:'grinder'}]},
+    {q:'You\'re winning easily. What do you do?', opts:[{t:'Keep pushing and go for more winners',s:'aggressive'}, {t:'Keep closing out points at the net',s:'servevolley'}, {t:'Stay steady and don\'t get sloppy',s:'counter'}, {t:'Try new things since I have room to',s:'allcourt'}, {t:'Just keep doing what\'s working, point by point',s:'grinder'}]},
+    {q:'You\'re losing badly. What do you do?', opts:[{t:'Go even bigger, try to turn it around fast',s:'aggressive'}, {t:'Rush the net more to change the pattern',s:'servevolley'}, {t:'Slow down and just make them work for it',s:'counter'}, {t:'Change my whole game plan',s:'allcourt'}, {t:'Just keep fighting for every single point',s:'grinder'}]},
+    {q:'You\'re facing someone who never misses. What do you do?', opts:[{t:'Try to hit through them with power',s:'aggressive'}, {t:'Rush the net so rallies end faster',s:'servevolley'}, {t:'Match their patience and wait for my shot',s:'counter'}, {t:'Mix up pace and spin to break their rhythm',s:'allcourt'}, {t:'Just out-rally them, I don\'t mind long points',s:'grinder'}]},
+    {q:'How would you describe your backhand?', opts:[{t:'Hard and flat, I like to attack with it',s:'aggressive'}, {t:'A good slice to set up the net',s:'servevolley'}, {t:'Solid and safe, rarely makes mistakes',s:'counter'}, {t:'Flexible, I can hit it many ways',s:'allcourt'}, {t:'Full of topspin, great for long rallies',s:'grinder'}]},
+    {q:'In doubles, where do you like to be?', opts:[{t:'At the baseline, hitting big shots',s:'aggressive'}, {t:'At the net the whole time',s:'servevolley'}, {t:'Wherever helps me react to the other team',s:'counter'}, {t:'I move around and adjust a lot',s:'allcourt'}, {t:'Wherever keeps the point going longest',s:'grinder'}]},
+    {q:'What\'s the first shot of a match usually like for you?', opts:[{t:'Aggressive, I like to start strong',s:'aggressive'}, {t:'I look for a chance to get to net early',s:'servevolley'}, {t:'Careful, I like to feel out my opponent first',s:'counter'}, {t:'It depends on how I\'m feeling that day',s:'allcourt'}, {t:'Steady, I like to build into the match slowly',s:'grinder'}]},
+    {q:'What do you like about practicing serves?', opts:[{t:'Feeling the power and speed',s:'aggressive'}, {t:'Practicing serve and volley together',s:'servevolley'}, {t:'Making sure it\'s safe and reliable',s:'counter'}, {t:'Trying different types of serves',s:'allcourt'}, {t:'Building up stamina by serving a lot',s:'grinder'}]},
+    {q:'When you watch pro tennis, what do you enjoy most?', opts:[{t:'Huge winners and big rallies',s:'aggressive'}, {t:'Cool volleys and net play',s:'servevolley'}, {t:'Amazing defense and comebacks',s:'counter'}, {t:'Players who can do everything well',s:'allcourt'}, {t:'Long, epic matches that go on forever',s:'grinder'}]},
+    {q:'If you had unlimited energy, how would your game change?', opts:[{t:'I\'d go for even bigger shots',s:'aggressive'}, {t:'I\'d attack the net even more',s:'servevolley'}, {t:'I\'d wait even longer for the perfect shot',s:'counter'}, {t:'I\'d try way more things',s:'allcourt'}, {t:'Honestly not much, I already never get tired',s:'grinder'}]},
+    {q:'What is your favorite way to hit a forehand?', opts:[{t:'Flat and fast',s:'aggressive'}, {t:'Short and sharp, so I can rush in',s:'servevolley'}, {t:'Safe and deep, keeps me in the point',s:'counter'}, {t:'Depends on the situation',s:'allcourt'}, {t:'With lots of topspin',s:'grinder'}]},
+    {q:'How do you feel about playing in hot weather?', opts:[{t:'Doesn\'t bother me, I end points fast anyway',s:'aggressive'}, {t:'Doesn\'t bother me much, I\'m not out there long',s:'servevolley'}, {t:'A little tough, but I manage',s:'counter'}, {t:'I just adjust and keep playing',s:'allcourt'}, {t:'I actually don\'t mind it, I\'m used to long matches',s:'grinder'}]},
+    {q:'Do you play differently against a friend versus a stranger?', opts:[{t:'No, I always go for it',s:'aggressive'}, {t:'No, I always look to attack the net',s:'servevolley'}, {t:'A little, I study strangers more carefully',s:'counter'}, {t:'Yes, I adjust based on who I\'m playing',s:'allcourt'}, {t:'Not really, I always play patient',s:'grinder'}]},
+    {q:'The rally has gone on for a while. What\'s your plan?', opts:[{t:'Look for a chance to end it with a big shot',s:'aggressive'}, {t:'Look for a short ball so I can attack the net',s:'servevolley'}, {t:'Keep waiting for their mistake',s:'counter'}, {t:'Change up the shots to break the pattern',s:'allcourt'}, {t:'Keep it going, I\'m just getting started',s:'grinder'}]},
+    {q:'What is your dream moment in tennis?', opts:[{t:'Hitting the winning shot in a big match',s:'aggressive'}, {t:'Finishing a big point at the net',s:'servevolley'}, {t:'Coming back from way behind to win',s:'counter'}, {t:'Winning a tough match by adjusting my game perfectly',s:'allcourt'}, {t:'Outlasting someone in a super long match',s:'grinder'}]},
+    {q:'If your coach cancelled practice for a week, you\'d rather...', opts:[{t:'Hit against a wall for power',s:'aggressive'}, {t:'Practice volleys at home',s:'servevolley'}, {t:'Work on footwork and reflexes',s:'counter'}, {t:'Do a bit of everything',s:'allcourt'}, {t:'Go for a long run to stay in shape',s:'grinder'}]},
+    {q:'You\'re playing someone much taller than you. What do you do?', opts:[{t:'Hit hard and low so they can\'t use their height',s:'aggressive'}, {t:'Get to the net where height matters less',s:'servevolley'}, {t:'Move them around and make them work',s:'counter'}, {t:'Try a few different plans until one works',s:'allcourt'}, {t:'Just keep the ball going and wear them down',s:'grinder'}]},
+    {q:'You\'re playing someone much faster than you. What do you do?', opts:[{t:'Hit winners before they can even react',s:'aggressive'}, {t:'End points quickly at the net',s:'servevolley'}, {t:'Use their speed against them with well-placed shots',s:'counter'}, {t:'Mix things up so they can\'t predict me',s:'allcourt'}, {t:'Just outlast them, speed tires out eventually',s:'grinder'}]},
+    {q:'It\'s match point for you. What\'s your plan?', opts:[{t:'Go for a big, bold shot',s:'aggressive'}, {t:'Look to finish it at the net',s:'servevolley'}, {t:'Play it safe and let them make the mistake',s:'counter'}, {t:'Whatever feels right in the moment',s:'allcourt'}, {t:'Just keep the ball in and be patient',s:'grinder'}]},
+    {q:'It\'s match point for your opponent. What\'s your plan?', opts:[{t:'Go big anyway, no fear',s:'aggressive'}, {t:'Try to rush the net and surprise them',s:'servevolley'}, {t:'Stay calm and just get the ball back',s:'counter'}, {t:'Try something they won\'t expect',s:'allcourt'}, {t:'Just fight for one more point, then another',s:'grinder'}]},
+    {q:'What\'s your favorite surface to play on?', opts:[{t:'Hard courts, the ball moves fast',s:'aggressive'}, {t:'Grass, great for attacking the net',s:'servevolley'}, {t:'Clay, more time to defend and think',s:'counter'}, {t:'Doesn\'t matter, I like them all',s:'allcourt'}, {t:'Clay, I can rally forever on it',s:'grinder'}]},
+    {q:'What\'s the best part of practice for you?', opts:[{t:'Hitting winners over and over',s:'aggressive'}, {t:'Working on volleys',s:'servevolley'}, {t:'Drills that make me quick and sharp',s:'counter'}, {t:'Trying new shots and ideas',s:'allcourt'}, {t:'Long rally drills that build stamina',s:'grinder'}]},
+    {q:'What\'s the hardest part of a match for you?', opts:[{t:'Staying patient when I want to go big',s:'aggressive'}, {t:'Waiting for the right time to attack the net',s:'servevolley'}, {t:'Not being able to end the point early',s:'counter'}, {t:'Deciding which game plan to use',s:'allcourt'}, {t:'Nothing really, I\'m built for long matches',s:'grinder'}]},
+    {q:'What matters most to you when picking a racket?', opts:[{t:'Power',s:'aggressive'}, {t:'Control at the net',s:'servevolley'}, {t:'Feel and touch',s:'counter'}, {t:'A good mix of everything',s:'allcourt'}, {t:'Something light so I don\'t get tired',s:'grinder'}]},
+    {q:'How would you describe your mental game?', opts:[{t:'Confident and fearless',s:'aggressive'}, {t:'Sharp and quick-thinking',s:'servevolley'}, {t:'Calm and patient',s:'counter'}, {t:'Flexible, I adjust my mindset a lot',s:'allcourt'}, {t:'Tough, I never give up mentally',s:'grinder'}]},
+    {q:'If you could instantly get better at one thing, what would it be?', opts:[{t:'Even more power',s:'aggressive'}, {t:'Better volleys',s:'servevolley'}, {t:'Faster reflexes',s:'counter'}, {t:'Being able to do everything well',s:'allcourt'}, {t:'Even more stamina',s:'grinder'}]},
+    {q:'What\'s your favorite drill?', opts:[{t:'Hitting winners down the line',s:'aggressive'}, {t:'Serve and volley practice',s:'servevolley'}, {t:'Defense and recovery drills',s:'counter'}, {t:'Mixing different shots together',s:'allcourt'}, {t:'Long cross-court rally drills',s:'grinder'}]},
+    {q:'Your opponent looks tired. What do you do?', opts:[{t:'Go for winners to finish it fast',s:'aggressive'}, {t:'Rush the net to close it out',s:'servevolley'}, {t:'Keep the rally going, they\'ll tire out more',s:'counter'}, {t:'Change tactics to end it however works best',s:'allcourt'}, {t:'Just keep grinding, I\'m not tired at all',s:'grinder'}]},
+    {q:'It\'s 6-6 in a tiebreak. What\'s your mindset?', opts:[{t:'Time to be bold and go big',s:'aggressive'}, {t:'Look for any chance to get to the net',s:'servevolley'}, {t:'Stay calm and don\'t rush',s:'counter'}, {t:'Read the moment and trust my instincts',s:'allcourt'}, {t:'Just don\'t crack first',s:'grinder'}]},
+    {q:'How would you describe your first serve?', opts:[{t:'Fast and powerful',s:'aggressive'}, {t:'Good enough to set up a net rush',s:'servevolley'}, {t:'Safe, I don\'t like to give away free points',s:'counter'}, {t:'Depends on what the point needs',s:'allcourt'}, {t:'Not the biggest, but sets up a long point well',s:'grinder'}]},
+    {q:'How would you describe your second serve?', opts:[{t:'Still pretty aggressive',s:'aggressive'}, {t:'Safe, then I look to attack after',s:'servevolley'}, {t:'Very safe, I don\'t want to double fault',s:'counter'}, {t:'Depends on the score and situation',s:'allcourt'}, {t:'High and spinny, sets up a long rally',s:'grinder'}]},
+    {q:'You\'re facing someone with a huge serve. What do you do?', opts:[{t:'Try to return it just as hard',s:'aggressive'}, {t:'Chip it and rush the net',s:'servevolley'}, {t:'Block it back safe and steady',s:'counter'}, {t:'Change my return depending on the serve',s:'allcourt'}, {t:'Just get it back in play and grind from there',s:'grinder'}]},
+    {q:'You\'re facing someone who moves really well. What do you do?', opts:[{t:'Hit harder so they have less time to react',s:'aggressive'}, {t:'Get to net faster than they can defend',s:'servevolley'}, {t:'Use angles instead of power',s:'counter'}, {t:'Mix things up to confuse their movement',s:'allcourt'}, {t:'Rally longer, movement tires out eventually',s:'grinder'}]},
+    {q:'If you lost your favorite shot for a day, what would you miss most?', opts:[{t:'My big power shots',s:'aggressive'}, {t:'My net game',s:'servevolley'}, {t:'My defense',s:'counter'}, {t:'Being able to switch things up',s:'allcourt'}, {t:'My patience and endurance shots',s:'grinder'}]},
+    {q:'What\'s your ideal weather to play in?', opts:[{t:'Sunny and fast conditions',s:'aggressive'}, {t:'Doesn\'t matter much to me',s:'servevolley'}, {t:'Calm and steady, easier to focus',s:'counter'}, {t:'Any weather, I just adjust',s:'allcourt'}, {t:'Doesn\'t matter, long matches don\'t scare me',s:'grinder'}]},
+    {q:'You get a bad line call against you. What do you do?', opts:[{t:'Get fired up and hit even harder next point',s:'aggressive'}, {t:'Shake it off and look for the next chance to attack',s:'servevolley'}, {t:'Stay calm, don\'t let it change my plan',s:'counter'}, {t:'Adjust my focus and move on',s:'allcourt'}, {t:'Just keep grinding like nothing happened',s:'grinder'}]},
+    {q:'Overall, what\'s your favorite surface?', opts:[{t:'Hard court',s:'aggressive'}, {t:'Grass',s:'servevolley'}, {t:'Clay',s:'counter'}, {t:'I like them all equally',s:'allcourt'}, {t:'Clay, for sure',s:'grinder'}]},
+    {q:'If you had to pick one shot to use forever, what would it be?', opts:[{t:'A big forehand',s:'aggressive'}, {t:'A sharp volley',s:'servevolley'}, {t:'A perfect passing shot',s:'counter'}, {t:'I couldn\'t pick just one',s:'allcourt'}, {t:'A deep, spinny groundstroke',s:'grinder'}]},
+    {q:'When watching a match, who do you usually cheer for?', opts:[{t:'The player who hits the hardest',s:'aggressive'}, {t:'The player who attacks the net',s:'servevolley'}, {t:'The player who defends the best',s:'counter'}, {t:'Whoever plays the smartest',s:'allcourt'}, {t:'The player who never quits',s:'grinder'}]},
+    {q:'Who would be your dream opponent in a final?', opts:[{t:'A big hitter, so I can match their power',s:'aggressive'}, {t:'Someone I can out-net',s:'servevolley'}, {t:'A big hitter I can slow down and frustrate',s:'counter'}, {t:'Anyone, I like a challenge either way',s:'allcourt'}, {t:'Someone who can go the distance with me',s:'grinder'}]},
+    {q:'If practice got cancelled, you\'d rather spend the time...', opts:[{t:'Hitting extra serves and groundstrokes',s:'aggressive'}, {t:'Practicing volleys against a wall',s:'servevolley'}, {t:'Doing footwork drills',s:'counter'}, {t:'Watching pro matches for ideas',s:'allcourt'}, {t:'Going for a long run',s:'grinder'}]},
+    {q:'What matters most to you in your gear?', opts:[{t:'Something powerful',s:'aggressive'}, {t:'Something light and quick for net play',s:'servevolley'}, {t:'Something reliable and steady',s:'counter'}, {t:'Something that works for any style',s:'allcourt'}, {t:'Something comfortable for long matches',s:'grinder'}]},
+    {q:'What\'s your idea of a perfect Sunday?', opts:[{t:'A quick, dominant match win',s:'aggressive'}, {t:'A fun doubles match at the net',s:'servevolley'}, {t:'A tough single that I fight back and win',s:'counter'}, {t:'Trying something new on court',s:'allcourt'}, {t:'A long practice session that never ends',s:'grinder'}]},
+    {q:'The match goes to a third set. What\'s your mindset?', opts:[{t:'Time to be even more aggressive',s:'aggressive'}, {t:'Time to attack the net more',s:'servevolley'}, {t:'Stay patient, this is where I do well',s:'counter'}, {t:'Adjust my plan based on how it\'s going',s:'allcourt'}, {t:'This is exactly what I trained for',s:'grinder'}]},
+    {q:'Your opponent is talking trash. What do you do?', opts:[{t:'Let my shots do the talking',s:'aggressive'}, {t:'Focus on my net game and ignore it',s:'servevolley'}, {t:'Stay calm, it won\'t get to me',s:'counter'}, {t:'Use it as motivation, whatever works',s:'allcourt'}, {t:'Just keep grinding, I don\'t get rattled',s:'grinder'}]},
+    {q:'New balls just came out. Do you notice a difference?', opts:[{t:'Yes, they\'re faster, I like it',s:'aggressive'}, {t:'Yes, easier to finish points at net',s:'servevolley'}, {t:'A little, but I adjust fast',s:'counter'}, {t:'Not really, I play the same either way',s:'allcourt'}, {t:'Not much, long rallies feel the same to me',s:'grinder'}]},
+    {q:'What\'s your favorite tennis memory so far?', opts:[{t:'Hitting a huge winner to win a match',s:'aggressive'}, {t:'A great point I finished at the net',s:'servevolley'}, {t:'Coming back from a big deficit to win',s:'counter'}, {t:'A match where my game plan worked perfectly',s:'allcourt'}, {t:'Outlasting someone in a really long match',s:'grinder'}]},
+    {q:'If you could change one rule in tennis, what would it be?', opts:[{t:'Make points end faster',s:'aggressive'}, {t:'Make the net game more rewarded',s:'servevolley'}, {t:'Nothing, I like the game as is',s:'counter'}, {t:'Something that adds more strategy',s:'allcourt'}, {t:'Nothing, long matches are the best part',s:'grinder'}]},
+    {q:'You\'re hitting against a wall to practice. What are you working on?', opts:[{t:'Hitting harder and harder',s:'aggressive'}, {t:'Quick volleys',s:'servevolley'}, {t:'Getting every ball back, no matter what',s:'counter'}, {t:'Mixing up all my shots',s:'allcourt'}, {t:'Just hitting for a long time without stopping',s:'grinder'}]},
+    {q:'What do people usually say about your game?', opts:[{t:'That I hit really hard',s:'aggressive'}, {t:'That I\'m great at the net',s:'servevolley'}, {t:'That I never miss',s:'counter'}, {t:'That I can play any style',s:'allcourt'}, {t:'That I never get tired',s:'grinder'}]},
+    {q:'You\'re playing in a tournament final. What\'s your mindset?', opts:[{t:'Go for it, be bold, this is my moment',s:'aggressive'}, {t:'Look for chances to attack the net',s:'servevolley'}, {t:'Stay calm and let them make mistakes',s:'counter'}, {t:'Play smart and adjust as I go',s:'allcourt'}, {t:'Just outlast them, I\'m ready for a long fight',s:'grinder'}]},
+    {q:'You\'re doing footwork ladder drills. What are you thinking about?', opts:[{t:'Getting explosive so I can hit harder',s:'aggressive'}, {t:'Getting quick so I can reach the net faster',s:'servevolley'}, {t:'Getting fast so I can chase down everything',s:'counter'}, {t:'Getting balanced so I can move any direction',s:'allcourt'}, {t:'Building up so I can move for hours',s:'grinder'}]},
+    {q:'You get one extra hour to train. What do you do with it?', opts:[{t:'Hit more big shots',s:'aggressive'}, {t:'Practice volleys',s:'servevolley'}, {t:'Work on defense and reflexes',s:'counter'}, {t:'Practice a bit of everything',s:'allcourt'}, {t:'Do extra fitness training',s:'grinder'}]},
+    {q:'You\'re playing someone at your exact skill level. What\'s your plan?', opts:[{t:'Try to overpower them early',s:'aggressive'}, {t:'Try to control the net before they can',s:'servevolley'}, {t:'Wait for them to make the first mistake',s:'counter'}, {t:'Try a few plans and see what works',s:'allcourt'}, {t:'Just outlast them, longer matches favor me',s:'grinder'}]},
+    {q:'Your grip feels worn out mid-match. What do you do?', opts:[{t:'Don\'t care, I still swing hard',s:'aggressive'}, {t:'Doesn\'t matter much, I\'m at net anyway',s:'servevolley'}, {t:'It bothers me, I like control over the ball',s:'counter'}, {t:'I just adjust and keep playing',s:'allcourt'}, {t:'Doesn\'t bother me, I just keep grinding',s:'grinder'}]},
+    {q:'What matters most to you when picking an overgrip?', opts:[{t:'Something that helps me swing fast',s:'aggressive'}, {t:'Something that helps with quick volleys',s:'servevolley'}, {t:'Something with great feel and control',s:'counter'}, {t:'I don\'t think about it too much',s:'allcourt'}, {t:'Something comfy for long matches',s:'grinder'}]},
+    {q:'Loose strings or tight strings — what matters more to you?', opts:[{t:'Looser, I want more power',s:'aggressive'}, {t:'Tighter, I want more control at net',s:'servevolley'}, {t:'Tighter, I want more control overall',s:'counter'}, {t:'Depends on the day',s:'allcourt'}, {t:'Doesn\'t matter much to me',s:'grinder'}]},
+    {q:'You have an early morning match. How do you feel?', opts:[{t:'Great, I like starting fast',s:'aggressive'}, {t:'Fine, I like getting to the net early',s:'servevolley'}, {t:'A bit slow to start, I warm into it',s:'counter'}, {t:'No difference to me',s:'allcourt'}, {t:'A bit tough, I like longer warm-ups',s:'grinder'}]},
+    {q:'You have a night match under lights. How do you feel?', opts:[{t:'I like it, feels intense',s:'aggressive'}, {t:'I like it, good for aggressive net play',s:'servevolley'}, {t:'Fine, doesn\'t change much for me',s:'counter'}, {t:'No difference to me',s:'allcourt'}, {t:'I like it, good energy for a long match',s:'grinder'}]},
+    {q:'If you had to teach a friend one thing first, what would it be?', opts:[{t:'How to hit with power',s:'aggressive'}, {t:'How to volley',s:'servevolley'}, {t:'How to move and defend',s:'counter'}, {t:'How to read the game and adjust',s:'allcourt'}, {t:'How to stay patient in long rallies',s:'grinder'}]},
+    {q:'Do you play differently in a warm-up match versus starting cold?', opts:[{t:'Not really, I go for it either way',s:'aggressive'}, {t:'Not really, I still look to attack net',s:'servevolley'}, {t:'Yes, I need time to feel it out',s:'counter'}, {t:'Yes, I adjust based on how I feel',s:'allcourt'}, {t:'Not much, I settle in slowly either way',s:'grinder'}]},
+    {q:'You have two matches back to back in one day. How do you feel about it?', opts:[{t:'Fine, I end points quickly anyway',s:'aggressive'}, {t:'Fine, my matches don\'t run too long',s:'servevolley'}, {t:'A little tired, but I manage',s:'counter'}, {t:'I just pace myself smartly',s:'allcourt'}, {t:'No problem, I have the stamina for it',s:'grinder'}]},
+    {q:'The score is close in the first set. What\'s your plan?', opts:[{t:'Push harder to get ahead',s:'aggressive'}, {t:'Look for a chance to take over at net',s:'servevolley'}, {t:'Stay patient, the lead will come',s:'counter'}, {t:'Try a new idea to break the tie',s:'allcourt'}, {t:'Just keep grinding, it\'ll turn my way',s:'grinder'}]},
+    {q:'You\'re way ahead in the first set. What\'s your plan?', opts:[{t:'Keep the pressure on, go for more',s:'aggressive'}, {t:'Keep closing points out at net',s:'servevolley'}, {t:'Stay steady, don\'t get careless',s:'counter'}, {t:'Try new things since I have room to',s:'allcourt'}, {t:'Just keep doing what\'s working',s:'grinder'}]},
+    {q:'You\'re practicing against a ball machine. What do you set it to?', opts:[{t:'Fast balls so I can hit hard',s:'aggressive'}, {t:'Short balls so I can practice net rushes',s:'servevolley'}, {t:'Random balls to test my reflexes',s:'counter'}, {t:'A mix of everything',s:'allcourt'}, {t:'Steady balls so I can rally for a long time',s:'grinder'}]},
+    {q:'Before a big match, you can only practice one shot. Which one?', opts:[{t:'My forehand',s:'aggressive'}, {t:'My volley',s:'servevolley'}, {t:'My return of serve',s:'counter'}, {t:'Whatever feels weakest that day',s:'allcourt'}, {t:'My serve, so I can start points strong',s:'grinder'}]},
+    {q:'You\'re playing someone with way less experience. What do you do?', opts:[{t:'Still go for big shots, why hold back',s:'aggressive'}, {t:'Still look to attack the net',s:'servevolley'}, {t:'Play steady and let them make mistakes',s:'counter'}, {t:'Use it to try new things',s:'allcourt'}, {t:'Just play patient like normal',s:'grinder'}]},
+    {q:'You\'re playing someone with way more experience. What do you do?', opts:[{t:'Go for it anyway, no fear',s:'aggressive'}, {t:'Try to rush the net to change the pattern',s:'servevolley'}, {t:'Play smart and don\'t rush',s:'counter'}, {t:'Try a few different plans',s:'allcourt'}, {t:'Just try to outlast them',s:'grinder'}]},
+    {q:'Someone is filming your match. What do you think they\'d notice about you?', opts:[{t:'How hard I hit the ball',s:'aggressive'}, {t:'How much I\'m at the net',s:'servevolley'}, {t:'How many balls I get back',s:'counter'}, {t:'How I change my game during the match',s:'allcourt'}, {t:'How I never seem to get tired',s:'grinder'}]},
+    {q:'What matters most to you in tennis shoes?', opts:[{t:'Good grip for quick, powerful movement',s:'aggressive'}, {t:'Light and quick for net play',s:'servevolley'}, {t:'Good support for fast side-to-side movement',s:'counter'}, {t:'Comfortable for anything',s:'allcourt'}, {t:'Comfortable enough for long matches',s:'grinder'}]},
+    {q:'You\'re playing a fun, not-so-serious practice set. What\'s your approach?', opts:[{t:'Still go for big shots, just for fun',s:'aggressive'}, {t:'Still try fun net plays',s:'servevolley'}, {t:'Relaxed, just get the ball back',s:'counter'}, {t:'Try out new shots I don\'t normally use',s:'allcourt'}, {t:'Just enjoy the long rallies',s:'grinder'}]},
+    {q:'You\'re the higher seed in a tournament. How do you feel?', opts:[{t:'Confident, ready to be aggressive',s:'aggressive'}, {t:'Confident, ready to control the net',s:'servevolley'}, {t:'Focused, I don\'t want to underestimate anyone',s:'counter'}, {t:'Ready to adjust to whatever comes',s:'allcourt'}, {t:'Calm, I trust I can outlast anyone',s:'grinder'}]},
+    {q:'You\'re the underdog in a match. How do you feel?', opts:[{t:'Excited, nothing to lose so I go big',s:'aggressive'}, {t:'Excited, I\'ll try to surprise them at net',s:'servevolley'}, {t:'Focused, I\'ll make them earn every point',s:'counter'}, {t:'Ready to try anything to find an edge',s:'allcourt'}, {t:'Calm, long matches favor the patient one',s:'grinder'}]},
+    {q:'Right before a match, what\'s your mindset?', opts:[{t:'Let\'s be bold and take control',s:'aggressive'}, {t:'Let\'s find chances to get to the net',s:'servevolley'}, {t:'Let\'s stay calm and patient',s:'counter'}, {t:'Let\'s stay ready for anything',s:'allcourt'}, {t:'Let\'s settle in for a long battle',s:'grinder'}]},
+    {q:'A match gets delayed by rain. How do you feel about the wait?', opts:[{t:'Annoyed, I want to keep the pressure on',s:'aggressive'}, {t:'Annoyed, breaks my net rhythm',s:'servevolley'}, {t:'Fine, I just reset and refocus',s:'counter'}, {t:'Fine, I just adjust to it',s:'allcourt'}, {t:'No big deal, I have plenty of patience',s:'grinder'}]},
+    {q:'The ball is bouncing higher and faster than normal today. What do you do?', opts:[{t:'Love it, more power for me',s:'aggressive'}, {t:'Adjust and look to close points at net',s:'servevolley'}, {t:'Play a bit more careful than usual',s:'counter'}, {t:'Just adjust my shots to match it',s:'allcourt'}, {t:'Doesn\'t bother me, I just keep rallying',s:'grinder'}]},
+    {q:'The ball is bouncing low and slow today. What do you do?', opts:[{t:'A bit annoying, I like more pace',s:'aggressive'}, {t:'I like it, easier to close in at net',s:'servevolley'}, {t:'I like it, more time to set up my shots',s:'counter'}, {t:'Just adjust either way',s:'allcourt'}, {t:'I like it, good for long patient rallies',s:'grinder'}]},
+    {q:'You get a let on a big point. How do you feel?', opts:[{t:'A little annoyed, I wanted to finish it',s:'aggressive'}, {t:'A little annoyed, I was closing in',s:'servevolley'}, {t:'Fine, I stay calm no matter what',s:'counter'}, {t:'No big deal, I just refocus',s:'allcourt'}, {t:'No big deal, I have all the patience I need',s:'grinder'}]},
+    {q:'You\'re serving for the match. What\'s your plan?', opts:[{t:'Go big and end it fast',s:'aggressive'}, {t:'Serve and rush the net to close it out',s:'servevolley'}, {t:'Play safe and steady, don\'t rush',s:'counter'}, {t:'Do whatever the moment calls for',s:'allcourt'}, {t:'Stay patient, I\'ll get there eventually',s:'grinder'}]},
+    {q:'Your opponent is serving for the match. What\'s your plan?', opts:[{t:'Attack their serve hard',s:'aggressive'}, {t:'Look to rush the net on the return',s:'servevolley'}, {t:'Get every ball back and make them earn it',s:'counter'}, {t:'Try something unexpected',s:'allcourt'}, {t:'Just fight for one more point, then the next',s:'grinder'}]},
+    {q:'What\'s your favorite shot to watch on TV?', opts:[{t:'A huge, powerful winner',s:'aggressive'}, {t:'A perfect touch volley',s:'servevolley'}, {t:'An amazing defensive get',s:'counter'}, {t:'A smart shot that changes the whole point',s:'allcourt'}, {t:'A long, exciting rally',s:'grinder'}]},
+    {q:'If you had to give up one shot forever, which would hurt the least?', opts:[{t:'My drop shot, I don\'t use finesse much',s:'aggressive'}, {t:'My groundstrokes, I live at the net anyway',s:'servevolley'}, {t:'My big serve, I don\'t rely on power',s:'counter'}, {t:'Hard to say, I use everything',s:'allcourt'}, {t:'My winners, I\'m happy to just rally forever',s:'grinder'}]},
+    {q:'You\'re facing someone who slices almost every shot. What do you do?', opts:[{t:'Take the low ball and still go for power',s:'aggressive'}, {t:'Use the low slice as a chance to attack net',s:'servevolley'}, {t:'Stay patient and wait for a better ball',s:'counter'}, {t:'Change my shot choice to handle the slice',s:'allcourt'}, {t:'Just keep grinding through it',s:'grinder'}]},
+    {q:'It\'s your very first tournament ever. How do you feel?', opts:[{t:'Excited, ready to swing free',s:'aggressive'}, {t:'Excited, ready to try attacking the net',s:'servevolley'}, {t:'A little nervous, so I play it safe',s:'counter'}, {t:'Curious, ready to see what works',s:'allcourt'}, {t:'Calm, I know I can just keep battling',s:'grinder'}]},
+    {q:'This is your 50th tournament. How do you feel walking in?', opts:[{t:'Confident, I know how to take control',s:'aggressive'}, {t:'Confident, I know how to use the net',s:'servevolley'}, {t:'Calm, I trust my defense by now',s:'counter'}, {t:'Comfortable, I know how to adjust to anyone',s:'allcourt'}, {t:'Relaxed, long matches don\'t scare me anymore',s:'grinder'}]},
+    {q:'How do you usually celebrate a win?', opts:[{t:'A big fist pump, I earned it with power',s:'aggressive'}, {t:'A quick smile, I love closing matches out',s:'servevolley'}, {t:'Relief, especially after a tough defensive battle',s:'counter'}, {t:'However feels right that day',s:'allcourt'}, {t:'Pure happiness after a long fight',s:'grinder'}]},
+    {q:'How do you usually react after a tough loss?', opts:[{t:'Frustrated I didn\'t go for more',s:'aggressive'}, {t:'Frustrated I didn\'t attack the net enough',s:'servevolley'}, {t:'Frustrated I wasn\'t patient enough',s:'counter'}, {t:'I think about what I should\'ve changed',s:'allcourt'}, {t:'Tired but proud I fought to the end',s:'grinder'}]},
+    {q:'If a coach could only give you one tip forever, what should it be?', opts:[{t:'How to control my power better',s:'aggressive'}, {t:'How to read when to come to net',s:'servevolley'}, {t:'How to turn defense into offense',s:'counter'}, {t:'How to read a match better',s:'allcourt'}, {t:'How to manage my energy in long matches',s:'grinder'}]},
+    {q:'You\'re playing your best friend. How does that change your game?', opts:[{t:'Not much, I still play to win',s:'aggressive'}, {t:'Not much, I still attack the net',s:'servevolley'}, {t:'I focus more, friends know my weak spots',s:'counter'}, {t:'I adjust more since I know their game so well',s:'allcourt'}, {t:'Not much, I just keep grinding like always',s:'grinder'}]},
+    {q:'You\'re playing your biggest rival. How does that change your game?', opts:[{t:'I go even bigger, I want to prove a point',s:'aggressive'}, {t:'I look for every chance to close at net',s:'servevolley'}, {t:'I stay extra patient and focused',s:'counter'}, {t:'I try my smartest game plan',s:'allcourt'}, {t:'I dig in for a long fight',s:'grinder'}]},
+    {q:'You get to pick the court surface for your next big match. What do you choose?', opts:[{t:'Hard court, fast and rewards power',s:'aggressive'}, {t:'Grass, great for attacking the net',s:'servevolley'}, {t:'Clay, more time to defend',s:'counter'}, {t:'Doesn\'t matter, I\'ll adjust',s:'allcourt'}, {t:'Clay, perfect for long rallies',s:'grinder'}]},
+    {q:'Windy outdoor court or calm indoor court — which do you prefer?', opts:[{t:'Outdoor, I like the challenge and energy',s:'aggressive'}, {t:'Indoor, cleaner conditions for net play',s:'servevolley'}, {t:'Indoor, easier to stay consistent',s:'counter'}, {t:'Doesn\'t matter, I adjust either way',s:'allcourt'}, {t:'Doesn\'t matter, long rallies work anywhere',s:'grinder'}]},
+    {q:'You get to watch any pro practice for a day. What do you focus on watching?', opts:[{t:'Their power shots',s:'aggressive'}, {t:'Their net game',s:'servevolley'}, {t:'Their defense and footwork',s:'counter'}, {t:'Everything, I want to learn it all',s:'allcourt'}, {t:'Their fitness and endurance training',s:'grinder'}]},
+    {q:'What\'s your favorite time of day to play?', opts:[{t:'Any time, I just want to compete',s:'aggressive'}, {t:'Any time, as long as I can attack the net',s:'servevolley'}, {t:'Cooler times, easier to stay focused',s:'counter'}, {t:'Doesn\'t matter to me',s:'allcourt'}, {t:'Doesn\'t matter, I can grind any time of day',s:'grinder'}]},
+    {q:'Your bag can only have 3 things in it. What matters most?', opts:[{t:'My racket for power shots',s:'aggressive'}, {t:'My racket for quick net play',s:'servevolley'}, {t:'Extra grips for control',s:'counter'}, {t:'A little of everything I might need',s:'allcourt'}, {t:'Water and snacks, I\'ll be out there a while',s:'grinder'}]},
+    {q:'How do you react after a double fault?', opts:[{t:'A bit annoyed, but I go bigger next serve',s:'aggressive'}, {t:'A bit annoyed, but I refocus on the net game',s:'servevolley'}, {t:'I stay calm, it happens sometimes',s:'counter'}, {t:'I just adjust my serve plan',s:'allcourt'}, {t:'I shake it off fast, one point doesn\'t matter much',s:'grinder'}]},
+    {q:'How do you react after hitting a great shot?', opts:[{t:'Pumped up, ready for the next big one',s:'aggressive'}, {t:'Happy, especially if it was a great volley',s:'servevolley'}, {t:'Quietly proud, I don\'t show much emotion',s:'counter'}, {t:'Happy either way, I enjoy good tennis',s:'allcourt'}, {t:'Happy, but I stay focused on the long game',s:'grinder'}]},
+    {q:'Would you rather win ugly or lose playing pretty?', opts:[{t:'Win ugly, winning is winning',s:'aggressive'}, {t:'Win ugly, as long as I got to the net',s:'servevolley'}, {t:'Win ugly, results matter most',s:'counter'}, {t:'Win ugly, but I like it to look good too',s:'allcourt'}, {t:'Win ugly, long grinding wins count the same',s:'grinder'}]},
+    {q:'What\'s your ideal routine right before a match?', opts:[{t:'A few big practice swings to feel powerful',s:'aggressive'}, {t:'Some volley practice to feel sharp at net',s:'servevolley'}, {t:'Calm breathing and a clear head',s:'counter'}, {t:'Whatever gets me ready that day',s:'allcourt'}, {t:'A good warm-up jog to get my body ready for a long day',s:'grinder'}]},
+    {q:'You\'re stuck playing only defense for a whole match. How do you feel?', opts:[{t:'Frustrated, that\'s not my game at all',s:'aggressive'}, {t:'A little frustrated, I miss the net',s:'servevolley'}, {t:'Totally fine, this is my comfort zone',s:'counter'}, {t:'Fine, I can adjust to it',s:'allcourt'}, {t:'Totally fine, I don\'t mind long defensive battles',s:'grinder'}]},
+    {q:'You\'re stuck playing only offense for a whole match. How do you feel?', opts:[{t:'Great, this is exactly my game',s:'aggressive'}, {t:'Great, especially if I can still get to net',s:'servevolley'}, {t:'A bit uncomfortable, I prefer to react',s:'counter'}, {t:'Fine, I can adjust to it',s:'allcourt'}, {t:'A bit odd, I prefer to outlast people',s:'grinder'}]},
+    {q:'What tennis skill are you most proud of?', opts:[{t:'How hard I can hit the ball',s:'aggressive'}, {t:'My net game',s:'servevolley'}, {t:'How rarely I miss',s:'counter'}, {t:'How well I can adapt my game',s:'allcourt'}, {t:'How long I can keep going without getting tired',s:'grinder'}]},
+    {q:'If you could send a message to yourself after a big win, what would it say?', opts:[{t:'Keep swinging big, it\'s working',s:'aggressive'}, {t:'Keep trusting the net game',s:'servevolley'}, {t:'Keep trusting your patience',s:'counter'}, {t:'Keep trusting your instincts',s:'allcourt'}, {t:'Keep grinding, it always pays off',s:'grinder'}]},
+    {q:'Someone asks you to describe your game in one word. What do you say?', opts:[{t:'Powerful',s:'aggressive'}, {t:'Sharp',s:'servevolley'}, {t:'Solid',s:'counter'}, {t:'Flexible',s:'allcourt'}, {t:'Relentless',s:'grinder'}]}
+  ];
+
+  const STYLES = {
+    aggressive:{name:"Aggressive baseliner", d:"You hit the ball hard and fast. You like to end points quickly, not play it safe."},
+    servevolley:{name:"Serve and volley attacker", d:"You love running to the net. You want to finish points up close, not from the back."},
+    counter:{name:"Counterpuncher", d:"You are great at defense. You wait for your chance, then hit back hard."},
+    allcourt:{name:"All-court player", d:"You can play many ways. You change your game to beat anyone."},
+    grinder:{name:"Grinder", d:"You never give up. Long points don't scare you at all."}
+  };
+
+  function shuffle(a){ a=[...a]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+  let quizQs, qIdx, scores;
+
+  function newQuiz(){
+    quizQs = shuffle(POOL).slice(0,10).map(q => ({ q: q.q, opts: shuffle(q.opts) }));
+    qIdx = 0;
+    scores = {aggressive:0, servevolley:0, counter:0, allcourt:0, grinder:0};
+    renderQuiz();
+  }
+
+  function renderQuiz(){
+    const app = document.getElementById('quiz-app');
+    if(qIdx >= quizQs.length){
+      const winnerKey = Object.entries(scores).sort((a,b)=>b[1]-a[1])[0][0];
+      const st = STYLES[winnerKey];
+      app.innerHTML = `
+        <div class="quiz-result">
+          <div class="label">Your playstyle is</div>
+          <div class="style-name">${st.name}</div>
+          <p>${st.d}</p>
+        </div>
+        <button id="quiz-retry">Take again with new questions</button>
+      `;
+      document.getElementById('quiz-retry').onclick = newQuiz;
+      return;
+    }
+    const q = quizQs[qIdx];
+    app.innerHTML = `
+      <div style="font-size:0.8rem;color:var(--muted);">Question ${qIdx+1} of ${quizQs.length}</div>
+      <div class="quiz-progress-track"><div class="quiz-progress-fill" style="width:${(qIdx/quizQs.length)*100}%;"></div></div>
+      <div class="quiz-q">${q.q}</div>
+      <div id="quiz-opts"></div>
+    `;
+    const optsEl = document.getElementById('quiz-opts');
+    q.opts.forEach(o => {
+      const b = document.createElement('button');
+      b.className = 'quiz-opt';
+      b.textContent = o.t;
+      b.onclick = () => { scores[o.s]++; qIdx++; renderQuiz(); };
+      optsEl.appendChild(b);
+    });
+  }
+
+  window.newQuiz = newQuiz;
+})();
+</script>
+</body>
+</html>
