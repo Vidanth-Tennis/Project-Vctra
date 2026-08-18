@@ -15,13 +15,21 @@ import sys
 import datetime
 import urllib.request
 from html.parser import HTMLParser
-
 CATEGORIES = {
+    "Boys U-12": "https://buzzato.com/tennis/aita/rankings/show/Boys/U12",
     "Boys U-14": "https://buzzato.com/tennis/aita/rankings/show/Boys/U14",
     "Boys U-16": "https://buzzato.com/tennis/aita/rankings/show/Boys/U16",
+    "Boys U-18": "https://buzzato.com/tennis/aita/rankings/show/Boys/U18",
+    "Girls U-12": "https://buzzato.com/tennis/aita/rankings/show/Girls/U12",
     "Girls U-14": "https://buzzato.com/tennis/aita/rankings/show/Girls/U14",
     "Girls U-16": "https://buzzato.com/tennis/aita/rankings/show/Girls/U16",
+    "Girls U-18": "https://buzzato.com/tennis/aita/rankings/show/Girls/U18",
+    "Men Singles": "https://buzzato.com/tennis/aita/rankings/show/Men/Singles",
+    "Men Doubles": "https://buzzato.com/tennis/aita/rankings/show/Men/Doubles",
+    "Women Singles": "https://buzzato.com/tennis/aita/rankings/show/Women/Singles",
+    "Women Doubles": "https://buzzato.com/tennis/aita/rankings/show/Women/Doubles",
 }
+
 
 USER_AGENT = "Mozilla/5.0 (compatible; AITA-Rank-Updater/1.0)"
 
