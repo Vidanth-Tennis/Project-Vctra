@@ -67,8 +67,11 @@ def parse_category(html):
             if v is not None:
                 points = v
                 break
-        if not (aita_id and state and name and points is not None):
+        if not (name and points is not None):
             continue
+        aita_id = aita_id or ""
+        state = state or ""
+        name = re.sub(r"\(\d{4}\)", "", name)
         name = re.sub(r"[\[\]]", "", name).strip(" -|")
         if not name:
             continue
@@ -85,6 +88,42 @@ def sample_rows(html, n=3):
     return shown[:n + 2]
 
 
+def _norm(name):
+    return " ".join(re.sub(r"[^A-Za-z ]", " ", name).upper().split())
+
+
+def enrich(rows, reference_rows):
+    """Buzzato's new lists have no state column and sometimes no AITA number.
+    Fill them in from older lists we already have (matched by AITA number,
+    or by exact name when that name is unique)."""
+    by_id = {r[2]: r for r in reference_rows if r[2]}
+    names = {}
+    for r in reference_rows:
+        names.setdefault(_norm(r[1]), []).append(r)
+    filled = 0
+    for row in rows:
+        if row[2] and not row[3]:
+            ref = by_id.get(row[2])
+            if ref:
+                row[3] = ref[3]
+                filled += 1
+        elif not row[2]:
+            matches = names.get(_norm(row[1]), [])
+            if len(matches) == 1:
+                row[2], row[3] = matches[0][2], matches[0][3]
+                filled += 1
+    return filled
+
+
+def add_tail(rows, older_rows):
+    """If a fresh list is cut short, add the players beyond its last rank
+    from the older complete list so nobody disappears."""
+    last = rows[-1][0] if rows else 0
+    have = {r[2] for r in rows if r[2]}
+    tail = [list(r) for r in older_rows if r[0] > last and r[2] not in have]
+    return rows + tail, len(tail)
+
+
 def load_json(path, default):
     try:
         with open(path, "r", encoding="utf-8") as f:
@@ -97,6 +136,8 @@ def update_history(history, cat, rows, list_date):
     """history[cat][id] = [best_rank, date_it_was_first_seen]"""
     h = history.setdefault(cat, {})
     for rank, _name, aita_id, _state, _pts in rows:
+        if not aita_id:
+            continue
         old = h.get(aita_id)
         if old is None or rank < old[0]:
             h[aita_id] = [rank, list_date]
@@ -138,11 +179,20 @@ def main():
                 for r in sample_rows(html):
                     print(f"DIAGNOSTIC {cat}: sample row cells: {r}")
             else:
+                reference = list(prev_cats.get(cat, []))
+                n_filled = enrich(rows, reference)
+                print(f"{cat}: filled in state/number for {n_filled} players; "
+                      f"{sum(1 for r in rows if not r[2])} still without an AITA number")
                 watch("buzzato", rows)
-                if len(rows) < need:
-                    print(f"{cat}: buzzato list looks incomplete ({len(rows)} of ~{old_count}) - not trusting it")
-                elif b_date:
+                if b_date and len(rows) >= need:
                     candidates.append((date_key(b_date), 1, "buzzato", rows, b_date))
+                elif b_date and old_count and len(rows) >= 0.5 * old_count:
+                    full, n_tail = add_tail(rows, reference)
+                    print(f"{cat}: buzzato list is short ({len(rows)} of ~{old_count}); "
+                          f"added {n_tail} players from the older list below rank {rows[-1][0]}")
+                    candidates.append((date_key(b_date), 1, "buzzato+older tail", full, b_date))
+                else:
+                    print(f"{cat}: buzzato list looks too incomplete ({len(rows)} of ~{old_count}) - not trusting it")
         except Exception as e:
             print(f"{cat}: buzzato failed ({e})")
 
