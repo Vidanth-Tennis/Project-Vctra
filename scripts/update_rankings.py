@@ -1,72 +1,22 @@
 #!/usr/bin/env python3
 """
-update_rankings.py
+update_rankings.py  (runs automatically via GitHub Actions)
 
-Fetches current AITA junior ranking data (mirrored at buzzato.com, sourced
-from AITA) for Boys/Girls U-14 and U-16, parses it, and writes data.json
-in the same shape the website already expects.
-
-Run manually:  python3 scripts/update_rankings.py
-Run automatically: see .github/workflows/update-rankings.yml
+1. Reads the 12 AITA ranking lists from buzzato.com
+2. Writes data.json   (current rankings + the REAL date of the list)
+3. Updates history.json (best rank ever seen per player, per category).
+   A best rank only ever improves (gets lower), never gets worse.
 """
 import json
 import re
 import sys
-import datetime
-import urllib.request
-from html.parser import HTMLParser
-CATEGORIES = {
-    "Boys U-12": "https://buzzato.com/tennis/aita/rankings/show/Boys/U12",
-    "Boys U-14": "https://buzzato.com/tennis/aita/rankings/show/Boys/U14",
-    "Boys U-16": "https://buzzato.com/tennis/aita/rankings/show/Boys/U16",
-    "Boys U-18": "https://buzzato.com/tennis/aita/rankings/show/Boys/U18",
-    "Girls U-12": "https://buzzato.com/tennis/aita/rankings/show/Girls/U12",
-    "Girls U-14": "https://buzzato.com/tennis/aita/rankings/show/Girls/U14",
-    "Girls U-16": "https://buzzato.com/tennis/aita/rankings/show/Girls/U16",
-    "Girls U-18": "https://buzzato.com/tennis/aita/rankings/show/Girls/U18",
-    "Men Singles": "https://buzzato.com/tennis/aita/rankings/show/Men/Singles",
-    "Men Doubles": "https://buzzato.com/tennis/aita/rankings/show/Men/Doubles",
-    "Women Singles": "https://buzzato.com/tennis/aita/rankings/show/Women/Singles",
-    "Women Doubles": "https://buzzato.com/tennis/aita/rankings/show/Women/Doubles",
-}
+import time
 
-
-USER_AGENT = "Mozilla/5.0 (compatible; AITA-Rank-Updater/1.0)"
+from common import CATEGORIES, fetch, page_text, date_key, TableRowParser
+import aita_source
 
 NAME_ID_STATE_RE = re.compile(r'^(.*?)\s*\((\d+)\)\s*\(([A-Z]{2,3})\)')
-
-
-class TableRowParser(HTMLParser):
-    def __init__(self):
-        super().__init__()
-        self.rows = []
-        self._row = None
-        self._cell = None
-
-    def handle_starttag(self, tag, attrs):
-        if tag == "tr":
-            self._row = []
-        elif tag in ("td", "th") and self._row is not None:
-            self._cell = []
-
-    def handle_data(self, data):
-        if self._cell is not None:
-            self._cell.append(data)
-
-    def handle_endtag(self, tag):
-        if tag in ("td", "th") and self._cell is not None:
-            self._row.append(" ".join("".join(self._cell).split()))
-            self._cell = None
-        elif tag == "tr" and self._row is not None:
-            if self._row:
-                self.rows.append(self._row)
-            self._row = None
-
-
-def fetch(url):
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        return resp.read().decode("utf-8", errors="replace")
+LIST_DATE_RE = re.compile(r"as on\s+(\d{1,2}(?:st|nd|rd|th)\s+[A-Za-z]+,\s*\d{4})")
 
 
 def parse_category(html):
@@ -92,52 +42,117 @@ def parse_category(html):
     return rows
 
 
-def main():
-    categories = {}
-    problems = []
+def load_json(path, default):
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, ValueError):
+        return default
 
-    for cat_name, url in CATEGORIES.items():
+
+def update_history(history, cat, rows, list_date):
+    """history[cat][id] = [best_rank, date_it_was_first_seen]"""
+    h = history.setdefault(cat, {})
+    for rank, _name, aita_id, _state, _pts in rows:
+        old = h.get(aita_id)
+        if old is None or rank < old[0]:
+            h[aita_id] = [rank, list_date]
+
+
+def main():
+    categories, dates, problems = {}, {}, []
+
+    previous = load_json("data.json", {})
+    prev_cats = previous.get("categories", {})
+    prev_dates = previous.get("asOfByCat", {})
+    sources = dict(previous.get("source", {}))
+
+    for n, (cat, url) in enumerate(CATEGORIES.items()):
+        if n:
+            time.sleep(2)  # be gentle with the websites
+
+        # ---- 1. buzzato ----
+        b_rows, b_date = None, None
         try:
             html = fetch(url)
             rows = parse_category(html)
-            if len(rows) < 50:
-                problems.append(f"{cat_name}: only parsed {len(rows)} rows, expected hundreds. Skipping update for this category.")
-                continue
-            categories[cat_name] = rows
-            print(f"{cat_name}: parsed {len(rows)} rows OK")
+            if len(rows) >= 50:
+                m = LIST_DATE_RE.search(page_text(html))
+                b_rows, b_date = rows, (m.group(1) if m else None)
+                print(f"{cat}: buzzato {len(rows)} rows, list date: {b_date}")
+            else:
+                print(f"DIAGNOSTIC {cat}: buzzato parsed {len(rows)} rows, page length={len(html)}, <tr> count={html.count('<tr')}")
+                print(f"DIAGNOSTIC {cat}: buzzato page starts with: {page_text(html)[:300]}")
         except Exception as e:
-            problems.append(f"{cat_name}: fetch/parse failed ({e})")
+            print(f"{cat}: buzzato failed ({e})")
+
+        # ---- 2. AITA's own site ----
+        a_rows, a_key = None, None
+        if cat in aita_source.AITA_URLS:
+            try:
+                res = aita_source.fetch_aita_category(cat)
+                if res:
+                    a_rows, a_key = res
+            except Exception as e:
+                print(f"{cat}: AITA site failed ({e})")
+            time.sleep(1)
+
+        # ---- 3. pick the one with the newest list ----
+        b_key = date_key(b_date) if b_date else None
+        old_count = len(prev_cats.get(cat, [])) or (len(b_rows) if b_rows else 0)
+        a_ok = (a_rows is not None and a_key is not None
+                and len(a_rows) >= 0.8 * old_count)          # looks like a full list
+        choice = None
+        if a_ok and b_rows is not None:
+            choice = "aita" if a_key > b_key else "buzzato"   # tie -> keep buzzato
+        elif a_ok:
+            choice = "aita"
+        elif b_rows is not None:
+            choice = "buzzato"
+
+        if choice == "aita":
+            categories[cat] = a_rows
+            dates[cat] = aita_source.format_date(a_key)
+        elif choice == "buzzato":
+            categories[cat] = b_rows
+            dates[cat] = b_date
+        else:
+            problems.append(f"{cat}: neither source gave a usable list. Keeping old data.")
+            continue
+        sources[cat] = choice
+        print(f"{cat}: using {choice} (list dated {dates[cat]})")
 
     if not categories:
-        print("No categories parsed successfully. Not touching data.json.", file=sys.stderr)
+        print("Nothing parsed. Not touching any files.", file=sys.stderr)
         for p in problems:
             print(" -", p, file=sys.stderr)
         sys.exit(1)
 
-    try:
-        with open("data.json", "r", encoding="utf-8") as f:
-            old = json.load(f)
-        old_categories = old.get("categories", {})
-    except FileNotFoundError:
-        old_categories = {}
-
-    merged = dict(old_categories)
+    old = previous
+    merged = dict(old.get("categories", {}))
     merged.update(categories)
+    cat_dates = dict(old.get("asOfByCat", {}))
+    for cat, d in dates.items():
+        if d:
+            cat_dates[cat] = d
 
-    today = datetime.date.today()
-    day = today.day
-    suffix = "th" if 11 <= day <= 13 else {1: "st", 2: "nd", 3: "rd"}.get(day % 10, "th")
-    as_of = today.strftime(f"{day}{suffix} %B, %Y")
+    # headline date = the newest list date we know about
+    known = [d for d in cat_dates.values() if d]
+    as_of = max(known, key=date_key) if known else old.get("asOf", "")
 
-    out = {"asOf": as_of, "categories": merged}
+    history = load_json("history.json", {})
+    for cat, rows in categories.items():
+        update_history(history, cat, rows, dates.get(cat) or as_of)
+
     with open("data.json", "w", encoding="utf-8") as f:
-        json.dump(out, f, separators=(",", ":"))
+        json.dump({"asOf": as_of, "asOfByCat": cat_dates, "source": sources, "categories": merged},
+                  f, separators=(",", ":"))
+    with open("history.json", "w", encoding="utf-8") as f:
+        json.dump(history, f, separators=(",", ":"), sort_keys=True)
 
-    print(f"\nWrote data.json (asOf: {as_of})")
-    if problems:
-        print("\nSome categories were NOT updated this run:", file=sys.stderr)
-        for p in problems:
-            print(" -", p, file=sys.stderr)
+    print(f"\nWrote data.json (list date: {as_of}) and history.json")
+    for p in problems:
+        print(" -", p, file=sys.stderr)
 
 
 if __name__ == "__main__":
