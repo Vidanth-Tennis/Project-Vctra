@@ -1,0 +1,70 @@
+name: Probe AITA site
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Look at aita.hitcourt.com
+        run: |
+          python3 - <<'PY'
+          import re, urllib.request, urllib.error
+
+          UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36"
+
+          def get(url, limit=3_000_000):
+              req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "text/html,application/json,*/*"})
+              try:
+                  with urllib.request.urlopen(req, timeout=40) as r:
+                      body = r.read(limit).decode("utf-8", "replace")
+                      return r.status, r.headers.get("Content-Type"), body
+              except urllib.error.HTTPError as e:
+                  return e.code, None, e.read(2000).decode("utf-8", "replace")
+              except Exception as e:
+                  return None, None, f"ERROR {e}"
+
+          def text(html):
+              html = re.sub(r"(?is)<(script|style).*?</\1>", " ", html)
+              return " ".join(re.sub(r"<[^>]+>", " ", html).split())
+
+          base = "https://aita.hitcourt.com"
+          urls = [
+              base + "/ranking-view?wid=1791743400&category=BS14&page=1&record=100",
+              base + "/ranking-view?wid=1791743400&category=BS14&page=1&record=2000",
+              base + "/ranking-view?category=BS14&page=1&record=100",
+              base + "/ranking-view?wid=1791743400&category=BS16&page=1&record=100",
+          ]
+          scripts = set()
+          for u in urls:
+              status, ctype, body = get(u)
+              print("=" * 70)
+              print("URL:", u)
+              print("STATUS:", status, "TYPE:", ctype, "LENGTH:", len(body), "<tr>:", body.count("<tr"))
+              print("TEXT START:", text(body)[:700])
+              i = body.find("VENKAT")
+              print("AROUND 'VENKAT':", body[max(0, i-600):i+600] if i >= 0 else "not found")
+              rows = re.findall(r"(?is)<tr.*?</tr>", body)[:2]
+              for r in rows:
+                  print("SAMPLE <tr>:", " ".join(r.split())[:800])
+              for m in re.findall(r'(?i)(?:src|href)=["\']([^"\']+\.js[^"\']*)["\']', body):
+                  scripts.add(m)
+              for m in re.findall(r'(?i)["\']([^"\']*(?:api|ajax|ranking|json)[^"\']*)["\']', body)[:25]:
+                  print("URL-LIKE STRING:", m[:200])
+
+          print("=" * 70)
+          print("SCRIPT FILES FOUND:", sorted(scripts)[:20])
+          for s in sorted(scripts)[:6]:
+              full = s if s.startswith("http") else base + "/" + s.lstrip("/")
+              if "hitcourt" not in full:
+                  continue
+              status, ctype, body = get(full, 800_000)
+              print("-" * 70)
+              print("SCRIPT:", full, status, len(body))
+              for m in re.findall(r"(?i)[^\n]{0,80}(?:fetch\(|\.ajax|axios|XMLHttpRequest|/api/|ranking)[^\n]{0,120}", body)[:15]:
+                  print("  >", m.strip()[:220])
+          PY
