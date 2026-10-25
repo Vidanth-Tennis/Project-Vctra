@@ -151,6 +151,14 @@
   .quiz-result .label{ font-size:0.8rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; }
   .quiz-result .style-name{ font-family:'Trebuchet MS',sans-serif; font-size:1.5rem; font-weight:800; color:var(--gold); margin:0.3rem 0 0.8rem; }
   .quiz-result p{ line-height:1.6; color:var(--ink); }
+
+.hist-wrap{overflow-x:auto;margin:0.4rem 0 0.9rem;}
+table.hist{width:100%;border-collapse:collapse;font-size:0.92rem;}
+table.hist th{text-align:left;color:var(--rose-gold);font-family:'Trebuchet MS',sans-serif;font-size:0.75rem;letter-spacing:0.08em;text-transform:uppercase;padding:0.4rem 0.6rem;border-bottom:1px solid rgba(207,157,148,0.35);}
+table.hist td{padding:0.45rem 0.6rem;border-bottom:1px solid rgba(255,255,255,0.06);}
+table.hist tr.hist-here td{color:var(--gold);font-weight:bold;}
+.hist-date{opacity:0.6;font-size:0.8rem;margin-left:0.3rem;}
+.hist-none{opacity:0.55;font-style:italic;}
 </style>
 </head>
 <body>
@@ -236,6 +244,9 @@
 <script>
 let DATA = {};
 let ASOF = "";
+let HIST = {};   // history.json: best rank seen by this site
+let SEED = {};   // seed.json: best-ever ranks copied from buzzato profiles
+let BYID = null; // id -> {category: current rank}
 
 const STATE_NAMES = {
   MH:'Maharashtra', KA:'Karnataka', PB:'Punjab', AS:'Assam', TS:'Telangana', DL:'Delhi',
@@ -272,7 +283,7 @@ const cat2Select = document.getElementById('cat2');
 function renderBoard(){
   const cat = catSelect.value;
   const d = DATA[cat];
-  let html = `<div class="asof">Ranking as of ${ASOF}</div><table>`;
+  let html = `<div class="asof">Rankings list dated ${ASOF}</div><table>`;
   d.slice(0,20).forEach(p => {
     html += `<tr>
       <td style="width:2.4rem;color:var(--muted);">${p[0]}</td>
@@ -382,6 +393,55 @@ function milestoneSentence(hit, cat){
   return `<strong>${cap(name)}</strong> sits ${rankGap} places outside the top ${target}${ptsGap !== null ? ` (roughly ${ptsGap.toFixed(2)} points behind the current #${target})` : ''}.`;
 }
 
+function buildById(){
+  BYID = {};
+  Object.keys(DATA).forEach(c => DATA[c].forEach(r => { (BYID[r[2]] = BYID[r[2]] || {})[c] = r[0]; }));
+}
+
+function playerHistory(id){
+  if(!BYID) buildById();
+  const cats = {};
+  const touch = c => (cats[c] = cats[c] || {cur:null, best:null, date:''});
+  const consider = (c, rank, date) => {
+    const e = touch(c);
+    if(e.best === null || rank < e.best){ e.best = rank; e.date = date || ''; }
+  };
+  const seeded = (SEED.players && SEED.players[id]) || {};
+  Object.entries(seeded.b || {}).forEach(([c, v]) => consider(c, v[0], v[1]));
+  Object.entries(seeded.c || {}).forEach(([c, v]) => consider(c, v[0], v[1]));
+  Object.keys(HIST).forEach(c => { const v = HIST[c][id]; if(v) consider(c, v[0], v[1]); });
+  Object.entries(BYID[id] || {}).forEach(([c, r]) => { touch(c).cur = r; if(cats[c].best === null || r < cats[c].best){ cats[c].best = r; cats[c].date = ASOF; } });
+  return cats;
+}
+
+function historyBlock(id, name, cat){
+  const all = playerHistory(id);
+  const names = Object.keys(all);
+  if(!names.length) return '';
+  const order = Object.keys(DATA);
+  names.sort((a, b) => (a === cat ? -1 : b === cat ? 1 : order.indexOf(a) - order.indexOf(b)));
+  const here = all[cat];
+  let intro = '';
+  if(here && here.best !== null){
+    if(here.cur !== null && here.cur <= here.best){
+      intro = `<strong>${cap(name)}</strong>'s current rank of <strong>#${here.cur}</strong> in ${cat} is their <strong>best ever</strong> in this category${here.date ? ` (reached ${here.date})` : ''}.`;
+    } else {
+      const gap = here.cur !== null ? ` &mdash; ${here.cur - here.best} places above where they are now (#${here.cur})` : '';
+      intro = `<strong>${cap(name)}</strong>'s highest-ever rank in ${cat} is <strong>#${here.best}</strong>${here.date ? `, reached ${here.date}` : ''}${gap}.`;
+    }
+  }
+  const rows = names.map(c => {
+    const e = all[c];
+    const cur = e.cur !== null ? '#' + e.cur : '<span class="hist-none">not ranked now</span>';
+    const best = e.best !== null ? `#${e.best}${e.date ? ` <span class="hist-date">${e.date}</span>` : ''}` : '&mdash;';
+    return `<tr${c === cat ? ' class="hist-here"' : ''}><td>${c}</td><td>${cur}</td><td>${best}</td></tr>`;
+  }).join('');
+  const others = names.filter(c => c !== cat).length;
+  const note = others ? `${cap(name)} also appears in ${others} other categor${others === 1 ? 'y' : 'ies'}:` : `${cap(name)} only appears in this category.`;
+  return `<p>${intro}</p><p>${note}</p>
+    <div class="hist-wrap"><table class="hist"><thead><tr><th>Category</th><th>Rank now</th><th>Best ever</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
 function lookupNarrative(hit, cat){
   const poolSize = DATA[cat].length;
   const [rank, name, id, state, pts] = hit;
@@ -392,7 +452,7 @@ function lookupNarrative(hit, cat){
   const stateRank = stateMates.findIndex(p => p[2] === id) + 1;
   const stateCount = stateMates.length;
 
-  const percentileP = `<strong>${cap(name)}</strong> (AITA ${id}) currently sits at <strong>#${rank}</strong> of ${poolSize} ranked players in ${cat}, with ${pts} ranking points as of ${ASOF}. That places them ${percentileBand}.`;
+  const percentileP = `<strong>${cap(name)}</strong> (AITA ${id}) currently sits at <strong>#${rank}</strong> of ${poolSize} ranked players in ${cat}, with ${pts} ranking points on the ${ASOF} list. That places them ${percentileBand}.`;
 
   const stateP = stateCount > 1
     ? `Representing <strong>${stateFull}</strong>, ${cap(name)} is the <strong>#${stateRank} ranked player from the state</strong> out of ${stateCount} ${stateFull} players who show up in this ${cat} list. That's worth knowing because state and zonal ranking tournaments will often mean running into the same ${stateFull} names again and again &mdash; the players just above and below at #${Math.max(1, stateRank-1)} and #${stateRank+1} in the state list are effectively the immediate rivals to watch.`
@@ -411,9 +471,9 @@ function lookupNarrative(hit, cat){
     milestoneP = `To break into the <strong>top ${target}</strong> nationally in ${cat}, ${cap(name)} has real work ahead: roughly <strong>${rankGap} places</strong> to climb${ptsGap !== null ? `, and somewhere around <strong>${ptsGap.toFixed(2)} more ranking points</strong> to catch the player currently sitting at #${target}` : ''}. That gap isn't trivial, but it's also not as far as it looks on paper &mdash; junior rankings move quickly, and a couple of good tournament runs (a final or two, or a string of quarterfinal-plus finishes) can move a player 50 to 100 places in a single ranking update. The realistic path is picking up ranking points steadily at the next few AITA events rather than chasing one big result.`;
   }
 
-  const caveatP = `<em>Worth being clear about what this reads from: only the ${ASOF} snapshot. There's no accessible AITA ranking archive, so this can't say whether ${cap(name)} is trending up, holding steady, or coming off a higher peak &mdash; just where they stand today, and how far the next milestone is from here.</em>`;
+  const caveatP = `<em>Current numbers come from the ${ASOF} list. Best-ever ranks come from buzzato's player records, and this site keeps improving them automatically whenever a player reaches a new high.</em>`;
 
-  return `<p>${percentileP}</p><p>${stateP}</p><p>${milestoneP}</p><p>${caveatP}</p>`;
+  return `<p>${percentileP}</p><p>${stateP}</p><p>${milestoneP}</p>${historyBlock(id, name, cat)}<p>${caveatP}</p>`;
 }
 
 function renderRankHolders(result, cat, d){
@@ -507,7 +567,7 @@ function matchupNarrative(a, b, cat){
 
   const p5 = `Looking at where each player needs to go from here: ${milestoneSentence(a, cat)} ${milestoneSentence(b, cat)} Whichever of the two closes their respective gap faster over the next few ranking tournaments is the one likely to be pulling further ahead by the time these two would actually meet on court.`;
 
-  const p4 = `<em>What this preview does <strong>not</strong> include: highest-ever rank, career trajectory, or head-to-head history. AITA doesn't publish an accessible ranking archive or match results database, so this tool only has the ${ASOF} snapshot for each category &mdash; there's no way to say whether either player has ranked higher before, is trending up or down, or has beaten the other previously. If you can share an older dated AITA ranking source for ${cat}, real movement/highest-rank tracking could be added on top of this.</em>`;
+  const p4 = `<em>What this preview does <strong>not</strong> include: highest-ever rank, career trajectory, or head-to-head history. AITA doesn't publish an accessible ranking archive or match results database, so this tool only has the ${ASOF} list for current ranks. Search each player on the Find My Rank tab to see their best-ever ranks &mdash; but there is no match-result data, so nothing here says who has beaten the other before.</em>`;
 
   return `<p>${p1}</p><p>${p2}</p><p>${p3}</p><p>${p5}</p><p>${p4}</p>`;
 }
@@ -582,6 +642,13 @@ async function loadData(){
     const json = await res.json();
     DATA = json.categories;
     ASOF = json.asOf;
+    // history files are optional - the site works fine without them
+    for(const [file, setter] of [['history.json', v => HIST = v], ['seed.json', v => SEED = v]]){
+      try{
+        const r = await fetch(file + '?t=' + Date.now());
+        if(r.ok) setter(await r.json());
+      } catch(e){ /* ignore */ }
+    }
     initApp();
   } catch(err){
     document.getElementById('board').innerHTML =
