@@ -124,6 +124,9 @@ def fetch_aita_category(cat):
     rows = parse_aita_table(html)
     date = find_list_date(page_text(html))
     print(f"AITA {cat}: {len(rows)} rows, list date: {date}")
+    text = page_text(html)
+    for m in list(re.finditer(KEYWORD + r"[:\s\-]*.{0,30}", text, re.I))[:4]:
+        print(f"DIAGNOSTIC AITA {cat}: date clue: ...{m.group(0)}...")
     if len(rows) < 50:
         print(f"AITA {cat}: page starts with: {page_text(html)[:200]}")
         return None
