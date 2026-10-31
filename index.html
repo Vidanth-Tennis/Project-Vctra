@@ -160,6 +160,9 @@ table.hist tr.hist-here td{color:var(--gold);font-weight:bold;}
 .hist-date{opacity:0.6;font-size:0.8rem;margin-left:0.3rem;}
 .hist-none{opacity:0.55;font-style:italic;}
 </style>
+<!-- Vercel Web Analytics: counts visits when the site is opened on vctra.vercel.app (harmless elsewhere) -->
+<script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+<script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
 <header>
@@ -454,7 +457,9 @@ function lookupNarrative(hit, cat){
 
   const percentileP = `<strong>${cap(name)}</strong> (AITA ${id}) currently sits at <strong>#${rank}</strong> of ${poolSize} ranked players in ${cat}, with ${pts} ranking points on the ${ASOF} list. That places them ${percentileBand}.`;
 
-  const stateP = stateCount > 1
+  const stateP = !state
+    ? `The latest ranking list doesn't show a state for ${cap(name)}, so there's no state-level ranking to compare here.`
+    : stateCount > 1
     ? `Representing <strong>${stateFull}</strong>, ${cap(name)} is the <strong>#${stateRank} ranked player from the state</strong> out of ${stateCount} ${stateFull} players who show up in this ${cat} list. That's worth knowing because state and zonal ranking tournaments will often mean running into the same ${stateFull} names again and again &mdash; the players just above and below at #${Math.max(1, stateRank-1)} and #${stateRank+1} in the state list are effectively the immediate rivals to watch.`
     : `Representing <strong>${stateFull}</strong>, ${cap(name)} appears to be the only ${stateFull} player showing up in this particular ${cat} snapshot, so there's no direct same-state peer group to size up here &mdash; the competition for them is really a national one, category-wide.`;
 
