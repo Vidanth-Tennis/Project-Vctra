@@ -271,6 +271,10 @@
   .quiz-progress-track{ height:4px; background:var(--panel-alt); border-radius:2px; margin:0.8rem 0 1.2rem; overflow:hidden; }
   .quiz-progress-fill{ height:100%; background: linear-gradient(90deg, var(--gold), var(--rose-gold)); border-radius:2px; }
   .quiz-result .blend{ font-size:0.95rem; opacity:0.85; margin-top:0.6rem; }
+  .ps-brief{ text-align:left; margin-top:1.4rem; border-top:1px solid var(--line); padding-top:1rem; }
+  .ps-brief .row{ margin-bottom:0.9rem; }
+  .ps-brief .row span{ display:block; font-family:var(--font-head); text-transform:uppercase; letter-spacing:0.1em; font-size:0.74rem; font-weight:700; color:var(--rose-gold); margin-bottom:0.15rem; }
+  .ps-brief .row p{ margin:0; font-size:0.95rem; line-height:1.55; }
   .quiz-q{ font-size:1.05rem; font-weight:700; margin:0 0 1rem; color:var(--ink); }
   .quiz-opt{ display:block; width:100%; text-align:left; background:var(--panel-alt); border:1px solid var(--line); color:var(--ink); margin:0 0 0.6rem; font-weight:400; font-family:var(--font-body); font-size:0.95rem; padding:0.75rem 0.9rem; box-shadow:none; }
   .quiz-opt:hover{ border-color: var(--rose-gold); filter:none; }
@@ -357,7 +361,7 @@ table.hist tr.hist-here td{color:var(--gold);font-weight:bold;}
   <div id="view-quiz" style="display:none;">
     <div class="card">
       <h3 style="margin-top:0;font-family:var(--font-head);">Find Your Playstyle</h3>
-      <p class="note" style="margin-bottom:1rem;">10 questions, drawn at random from a pool of 351 &mdash; retake it and you get a different set, and the answers are weighted, so no single option gives the game away.</p>
+      <p class="note" style="margin-bottom:1rem;">Every player wins points in a different way. Answer ten questions about how you actually play &mdash; your habits, your mistakes, what you avoid &mdash; and you'll get the playing style that fits you best, what it means on court, and what it costs you. Answer honestly rather than how you'd like to play: the unflattering options are there on purpose.</p>
       <div id="quiz-app"></div>
     </div>
   </div>
@@ -1321,11 +1325,41 @@ loadData();
 ];
 
   const STYLES = {
-    A:{name:"Aggressive baseliner", d:"You hit hard and take time away. You'd rather end a point in three shots than ten, and you accept the errors that come with that."},
-    S:{name:"Serve and volley attacker", d:"You want the front of the court. You look for any ball that lets you move in, and you'd rather be beaten by a pass than lose a long rally."},
-    C:{name:"Counterpuncher", d:"You defend better than almost anyone. You absorb pace, make opponents hit one more ball, and strike when they overreach."},
-    L:{name:"All-court player", d:"You have no single mode. You read the match and change height, pace and position to suit whoever is across the net."},
-    G:{name:"Grinder", d:"You win with weight and stamina. Long rallies and long matches favour you, and opponents tend to break before you do."}
+    A:{name:"Aggressive baseliner",
+       d:"You hit hard and take time away. You'd rather end a point in three shots than ten, and you accept the errors that come with that.",
+       win:"By hurting people. You look for the forehand, step in, and try to finish the point before your opponent is balanced.",
+       edge:"Short points, free points, and the fact that opponents never get comfortable. On a fast court you can beat players who are technically better than you.",
+       cost:"Your error count. When your timing is slightly off, the same shots that win you matches lose them, and you can go down 6-1 without the match ever feeling close.",
+       work:"Margin. Hitting the same shot a metre higher over the net and a metre inside the line keeps almost all of your power and removes most of your errors.",
+       like:"Players in the mould of Jannik Sinner or Iga Swiatek &mdash; first-strike tennis from the baseline."},
+    S:{name:"Serve and volley attacker",
+       d:"You want the front of the court. You look for any ball that lets you move in, and you'd rather be beaten by a pass than lose a long rally.",
+       win:"By taking space. You shorten the court, cut off angles, and force your opponent to hit a perfect pass under pressure.",
+       edge:"Pressure. Most juniors are not comfortable being rushed, and they start missing passes they'd normally make. You also keep matches short, which saves your legs.",
+       cost:"You live on small margins. A bad approach gets punished immediately, and against a good passer or a lobber you can run out of answers.",
+       work:"The quality of your approach ball, not the volley. Most net points are lost before you get there, by coming in behind a ball that was never good enough.",
+       like:"A rarer style now, in the tradition of players like Stefanos Tsitsipas when he chips and charges, or classic serve-volleyers on grass."},
+    C:{name:"Counterpuncher",
+       d:"You defend better than almost anyone. You absorb pace, make opponents hit one more ball, and strike when they overreach.",
+       win:"By not losing. You turn defence into offence, send back one more ball than they expect, and let big hitters talk themselves into errors.",
+       edge:"Patience and legs. You're very hard to beat quickly, you rarely hand over free points, and aggressive players often lose to you without understanding why.",
+       cost:"Hurting people. If an opponent is also steady, you can run out of ways to actually win a point, and matches become long and uncertain.",
+       work:"One weapon. You don't need to change your style &mdash; you need one shot, usually a forehand, that can end a point when the ball sits up.",
+       like:"Players in the mould of Daniil Medvedev &mdash; deep court position, extraordinary defence, opponents running out of ideas."},
+    L:{name:"All-court player",
+       d:"You have no single mode. You read the match and change height, pace and position to suit whoever is across the net.",
+       win:"By solving people. You work out what an opponent dislikes &mdash; low balls, high balls, being brought forward &mdash; and then give them that repeatedly.",
+       edge:"You have an answer for every style, so you rarely get blown off the court, and you can beat players who are stronger but one-dimensional.",
+       cost:"Not committing. Because you have options, you can change plans too early and never really press one advantage home.",
+       work:"Decisiveness. Pick the pattern that's working and stay with it for a whole set, even when it starts to feel repetitive. Repetition is not predictability if it keeps winning.",
+       like:"Players in the mould of Carlos Alcaraz or Ons Jabeur &mdash; comfortable anywhere on court, changing the shape of the point at will."},
+    G:{name:"Grinder",
+       d:"You win with weight and stamina. Long rallies and long matches favour you, and opponents tend to break before you do.",
+       win:"By making it long. Heavy topspin, deep targets, and a willingness to hit twenty balls means opponents have to beat you over and over to win one point.",
+       edge:"The third set. Your fitness and your spin wear people down physically and mentally, and on a slow court you're very difficult to get through.",
+       cost:"Speed of finishing. On a fast court, or against someone who takes the ball early, you can get pushed back and never be allowed to build the rallies you want.",
+       work:"Learning to finish. You've already earned short balls in every match &mdash; the gap is being able to step in and put one away instead of rallying again.",
+       like:"Players in the mould of Rafael Nadal in his junior years &mdash; heavy spin, relentless legs, nobody outlasting them."}
   };
 
   function shuffle(a){ a=[...a]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
@@ -1354,6 +1388,13 @@ loadData();
           <div class="style-name">${st.name}</div>
           <p>${st.d}</p>
           ${blend}
+          <div class="ps-brief">
+            <div class="row"><span>How you win points</span><p>${st.win}</p></div>
+            <div class="row"><span>Your edge</span><p>${st.edge}</p></div>
+            <div class="row"><span>What it costs you</span><p>${st.cost}</p></div>
+            <div class="row"><span>What to work on</span><p>${st.work}</p></div>
+            <div class="row"><span>Plays a bit like</span><p>${st.like}</p></div>
+          </div>
         </div>
         <button id="quiz-retry">Take again with new questions</button>
       `;
