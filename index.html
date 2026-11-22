@@ -4,30 +4,156 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AITA Rank Finder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700;800&family=Barlow+Semi+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg: #0a0c0a;
-    --bg-edge: #000000;
-    --panel: #141712;
-    --panel-alt: #1b201a;
-    --court: #0e2b1f;
-    --court-light: #1b4433;
-    --line: #2a2f28;
-    --ink: #e9ece5;
-    --muted: #92998e;
-    --gold: #c9a24a;
-    --rose-gold: #cf9d94;
-    --rose-gold-dim: #8a6560;
-    --accent: #3f7a5a;
-    --accent-dark: #2a5842;
-    --danger: #a35a42;
-    --danger-bg: #241c19;
+    /* Hard Court (US Open): bold court blue, deep navy, cream lines, ball yellow */
+    --bg: #0a5a30;
+    --bg-edge: #031f10;
+    --panel: #0d1b3a;
+    --panel-alt: #15295a;
+    --court: #1457c8;
+    --court-light: #2a7af0;
+    --line: #223f7a;
+    --ink: #f5f1e6;
+    --muted: #9fb4da;
+    --gold: #ffd21f;
+    --rose-gold: #f0eadb;
+    --rose-gold-dim: #6f89bd;
+    --accent: #1f6feb;
+    --accent-dark: #1450b4;
+    --danger: #f0553f;
+    --danger-bg: #2c1420;
+    --court-deep: #0a2a66;
+    --sub: #d3e2fb;
+    --head-ink: #ffffff;
+    --btn-ink: #ffffff;
+    --tab-bg: #070f24;
+    --danger-ink: #ffc2b5;
+    --preview-ink: #eaf1ff;
+    --shade: 0,6,24;
+    --font-body: 'Barlow','Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif;
+    --font-head: 'Barlow Semi Condensed','Arial Narrow','Segoe UI',system-ui,Arial,sans-serif;
+    --hl: var(--gold);
+    --hl2: var(--rose-gold);
   }
+  /* ===== Colour schemes (chosen with the dots in the header) ===== */
+  :root[data-theme="clay"]{
+    --bg:#5c2108; --bg-edge:#190802; --panel:#200f07; --panel-alt:#33180b;
+    --court:#b8420d; --court-light:#dc6a2b; --court-deep:#6a2406; --line:#6b3a24;
+    --ink:#f8f1e9; --muted:#d9b7a2; --gold:#ffffff; --rose-gold:#f6efe6; --rose-gold-dim:#b98a74;
+    --accent:#d4531a; --accent-dark:#963610; --danger:#e8553a; --danger-bg:#3a1710;
+    --sub:#ffe3d0; --head-ink:#fff8f0; --btn-ink:#fff8f0; --tab-bg:#160a05; --danger-ink:#ffc3b0; --preview-ink:#fff0e4;
+    --hl:#ffffff; --hl2:#ffd2b5;
+  }
+  /* clay court: white court lines in the header and on the cards */
+  :root[data-theme="clay"] header{
+    border-bottom:5px solid #f6efe6;
+    background-image:
+      linear-gradient(172deg, transparent 0 80%, rgba(246,239,230,0.95) 80% 82.2%, transparent 82.2%),
+      linear-gradient(180deg, var(--court-light) 0%, var(--court) 45%, var(--court-deep) 100%);
+  }
+  :root[data-theme="clay"] .card{ border-color:rgba(246,239,230,0.28); }
+  :root[data-theme="clay"] .tab.active{ box-shadow: 0 -6px 20px rgba(0,0,0,0.4), inset 0 3px 0 #f6efe6; }
+  :root[data-theme="clay"] .hit{ border-left-color:#f6efe6; }
+  :root[data-theme="wimbledon"]{
+    --bg:#3f8e2a; --bg-edge:#245f17; --panel:#ffffff; --panel-alt:#eef6ea;
+    --court:#2a7a22; --court-light:#4aa634; --court-deep:#154d18; --line:#c9dcc4;
+    --ink:#14301a; --muted:#4f6b4a; --gold:#5b2bb0; --rose-gold:#2a7a22; --rose-gold-dim:#8fb987;
+    --accent:#6b36c9; --accent-dark:#4a2190; --danger:#c8402b; --danger-bg:#fde8e3;
+    --sub:#f4fff0; --head-ink:#ffffff; --btn-ink:#ffffff; --tab-bg:#17561b; --danger-ink:#8a2a1a; --preview-ink:#ffffff;
+    --hl:#ffffff; --hl2:#d9c2ff; --shade:0,30,5;
+  }
+  /* grass: mown stripes + white court lines, like the net-post photo */
+  :root[data-theme="wimbledon"] header{
+    border-bottom:6px solid #ffffff;
+    background-image:
+      linear-gradient(90deg, transparent 0 5.5%, rgba(255,255,255,0.97) 5.5% 6.4%, transparent 6.4% 93.6%, rgba(255,255,255,0.97) 93.6% 94.5%, transparent 94.5%),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.07) 0 60px, rgba(0,0,0,0.05) 60px 120px),
+      linear-gradient(180deg, #58b53a 0%, #3f9a2a 55%, #2d7d1f 100%);
+  }
+  :root[data-theme="wimbledon"] header::before{ content:''; display:block; height:5px; width:90px; background:#6b36c9; margin:0 auto 0.9rem; border-radius:3px; box-shadow:0 0 0 2px #fff; }
+  :root[data-theme="wimbledon"] .card{ border:3px solid #ffffff; box-shadow:0 10px 30px rgba(0,40,10,0.35); }
+  :root[data-theme="wimbledon"] .tab:not(.active){ color:#fff; border-top:3px solid #ffffff; }
+  :root[data-theme="wimbledon"] .tab.active{ box-shadow: 0 -6px 20px rgba(0,0,0,0.25), inset 0 5px 0 #6b36c9; }
+  :root[data-theme="wimbledon"] input, :root[data-theme="wimbledon"] select{ background:#ffffff; color:#14301d; border:2px solid #9bc7a6; }
+  :root[data-theme="wimbledon"] button:not(.tp){ border:0; }
+  :root[data-theme="wimbledon"] .hit{ border-left-color:#6b36c9; background:#f0f7ec; }
+  :root[data-theme="wimbledon"] footer, :root[data-theme="wimbledon"] footer *{ color:#ffffff !important; }
+  :root[data-theme="wimbledon"] .preview table.hist th{ color:#e4d4ff; border-bottom-color:rgba(255,255,255,0.4); }
+  :root[data-theme="wimbledon"] .preview table.hist td{ color:#ffffff; border-bottom-color:rgba(255,255,255,0.2); }
+  :root[data-theme="wimbledon"] .preview table.hist tr.hist-here td{ color:#ffe35a; }
+  :root[data-theme="wimbledon"] body{ background-image: linear-gradient(90deg, transparent 0 3%, rgba(255,255,255,0.35) 3% 3.5%, transparent 3.5% 96.5%, rgba(255,255,255,0.35) 96.5% 97%, transparent 97%), repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 80px, rgba(0,0,0,0.05) 80px 160px), radial-gradient(ellipse 140% 110% at 50% 40%, var(--bg) 0%, var(--bg) 45%, var(--bg-edge) 100%); }
+  :root[data-theme="neon"]{
+    --bg:#08080c; --bg-edge:#000000; --panel:#101016; --panel-alt:#17171f;
+    --court:#0d1b22; --court-light:#12303a; --court-deep:#070f13; --line:#25252f;
+    --ink:#eef0f6; --muted:#8a8fa0; --gold:#b6ff3b; --rose-gold:#26d9ff; --rose-gold-dim:#1a8aa3;
+    --accent:#7acc1f; --accent-dark:#4f8a10; --danger:#ff5d73; --danger-bg:#24121a;
+    --sub:#9fc3cf; --head-ink:#eef0f6; --btn-ink:#0a1203; --tab-bg:#0b0b10; --danger-ink:#ffb3be; --preview-ink:#d6eef5;
+  }
+  /* default Hard Court: cream court lines and a yellow ball in the header */
+  header{ position:relative; overflow:hidden; }
+  :root:not([data-theme]) header{
+    border-bottom:5px solid #ebe5d9;
+    background-image:
+      linear-gradient(90deg, transparent 0 5.5%, rgba(235,229,217,0.95) 5.5% 6.1%, transparent 6.1% 93.9%, rgba(235,229,217,0.95) 93.9% 94.5%, transparent 94.5%),
+      radial-gradient(ellipse 70% 120% at 50% 0%, rgba(120,175,255,0.35) 0%, transparent 62%),
+      linear-gradient(180deg, #2b7cf0 0%, var(--court) 40%, var(--court-deep) 100%);
+  }
+  /* deep green "grass" glow at the bottom of the page */
+  :root:not([data-theme]) body{
+    background-image:
+      radial-gradient(ellipse 90% 45% at 50% 105%, rgba(40,170,90,0.45) 0%, transparent 70%),
+      radial-gradient(ellipse 90% 70% at 50% 0%, rgba(255,255,255,0.03) 0%, transparent 60%),
+      radial-gradient(ellipse 140% 110% at 50% 40%, var(--bg) 0%, var(--bg) 45%, var(--bg-edge) 100%);
+  }
+  :root:not([data-theme]) header::after{
+    content:''; position:absolute; top:26px; right:calc(5.5% + 26px); width:15px; height:15px; border-radius:50%;
+    background: radial-gradient(circle at 35% 30%, #fff7b0 0%, #ffd21f 55%, #d1a800 100%);
+    box-shadow: 3px 5px 8px rgba(0,0,0,0.35);
+  }
+  :root:not([data-theme]) .card{ border-color: rgba(235,229,217,0.22); }
+  :root:not([data-theme]) .tab.active{ box-shadow: 0 -6px 20px rgba(0,0,0,0.4), inset 0 3px 0 #ebe5d9; }
+  :root:not([data-theme]) .hit{ border-left-color:#ebe5d9; }
+  /* sporty type */
+  header h1{ text-transform:uppercase; letter-spacing:0.03em; font-weight:800; font-size:clamp(2.3rem, 6.5vw, 3.4rem); line-height:1; }
+  header{ padding-left:max(1.5rem,9%) !important; padding-right:max(1.5rem,9%) !important; }
+  header p{ font-size:1.1rem; margin-top:0.4rem; }
+  .hero-ball{ width:46px; height:46px; display:block; margin:0.2rem auto 0.5rem; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.45)); }
+  header::after{ display:none !important; }
+  .hero-kicker{ font-family:var(--font-head); text-transform:uppercase; letter-spacing:0.25em; font-size:1.15rem; font-weight:600; color:var(--sub); opacity:0.9; margin-bottom:0.2rem; }
+  .hero-title{ font-family:var(--font-head); text-transform:uppercase; font-weight:800; font-size:clamp(3rem, 11vw, 5.2rem); line-height:0.95; letter-spacing:0.02em; color:var(--head-ink); }
+  .hero-title span{ color:var(--gold); }
+  .hero-stats{ display:flex; justify-content:center; flex-wrap:wrap; gap:0.6rem; margin:1.1rem 0 0.2rem; }
+  .hero-stats .st{ background:rgba(0,0,0,0.28); border:1px solid rgba(255,255,255,0.25); border-radius:10px; padding:0.45rem 1rem; min-width:7.5rem; }
+  .hero-stats .st b{ display:block; font-family:var(--font-head); font-size:1.6rem; font-weight:800; line-height:1.1; color:var(--head-ink); }
+  .hero-stats .st i{ font-style:normal; font-size:0.72rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--sub); }
+  .tab{ text-transform:uppercase; letter-spacing:0.06em; font-size:1.05rem; }
+  button{ text-transform:uppercase; letter-spacing:0.08em; font-size:1.1rem; }
+  .quiz-opt{ text-transform:none; letter-spacing:0; font-size:1rem; }
+  .theme-picker button.tp{ text-transform:none; letter-spacing:0.02em; font-size:0.9rem; }
+  .hit .rank, .compare-col .rank, .tied-card .rank{ letter-spacing:0.01em; }
+  .hit .rank{ font-size:3rem; }
+  label{ letter-spacing:0.1em; font-weight:600; }
+  body{ font-size:1.05rem; font-weight:600; }
+  header p, .preview, .preview p, .card p, .meta, .hit .meta, .compare-col .pts, .tied-card .meta, table.hist td, .suggestions div{ font-weight:600; }
+  label{ font-weight:700 !important; }
+  select, input{ font-weight:700; }
+  strong, b{ font-weight:800; }
+  .theme-picker{ display:flex; justify-content:center; align-items:center; gap:0.55rem; margin-top:1.1rem; flex-wrap:wrap; }
+  .theme-picker .tp-label{ font-family:var(--font-head); font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--sub); margin-right:0.2rem; }
+  .theme-picker button.tp{ width:auto; margin:0; padding:0.32rem 0.7rem 0.32rem 0.38rem; display:inline-flex; align-items:center; gap:0.4rem; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.22); color:var(--head-ink); font-size:0.78rem; font-weight:700; border-radius:999px; box-shadow:none; }
+  .theme-picker button.tp .dot{ width:16px; height:16px; border-radius:50%; border:1px solid rgba(255,255,255,0.5); display:inline-block; }
+  .theme-picker button.tp.on{ background:rgba(255,255,255,0.22); border-color:var(--head-ink); box-shadow:0 0 0 2px rgba(255,255,255,0.18); }
+  @media (max-width:520px){ .theme-picker button.tp span.nm{ display:none; } .theme-picker button.tp{ padding:0.3rem; } }
   *{box-sizing:border-box;}
   body{
     margin:0;
-    font-family: 'Georgia', 'Iowan Old Style', serif;
+    font-family: var(--font-body);
     color: var(--ink);
+    font-variant-numeric: lining-nums;
     background-color: var(--bg);
     background-image:
       radial-gradient(ellipse 90% 70% at 50% 0%, rgba(255,255,255,0.03) 0%, transparent 60%),
@@ -36,28 +162,28 @@
     min-height: 100vh;
   }
   header{
-    background: linear-gradient(180deg, var(--court) 0%, #0a1a13 100%);
-    color: var(--ink);
+    background: linear-gradient(180deg, var(--court) 0%, var(--court-deep) 100%);
+    color: var(--head-ink);
     padding: 2.2rem 1.5rem 2.6rem;
     text-align:center;
-    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+    box-shadow: 0 12px 40px rgba(var(--shade),0.6);
     background-image:
       repeating-linear-gradient(0deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 40px),
       repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 40px),
-      linear-gradient(180deg, var(--court) 0%, #0a1a13 100%);
+      linear-gradient(180deg, var(--court) 0%, var(--court-deep) 100%);
   }
   header h1{
-    font-family: 'Trebuchet MS', sans-serif;
+    font-family: var(--font-head);
     font-weight: 800;
     letter-spacing: -0.02em;
     font-size: clamp(1.8rem, 5vw, 2.6rem);
     margin: 0 0 0.4rem;
   }
-  header h1 span{ background: linear-gradient(120deg, var(--gold) 0%, var(--rose-gold) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  header h1 span{ background: linear-gradient(120deg, var(--hl) 0%, var(--hl2) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
   header p{
     margin: 0;
     font-size: 0.95rem;
-    color: #a9b8ae;
+    color: var(--sub);
     max-width: 40rem;
     margin-inline:auto;
   }
@@ -70,16 +196,16 @@
   .tabs{ display:flex; gap: 0.5rem; margin-bottom: 1rem; }
   .tab{
     flex:1; text-align:center; padding: 0.7rem; border-radius: 10px 10px 0 0;
-    background: #0e100d; color: var(--muted); font-family: 'Trebuchet MS', sans-serif;
+    background: var(--tab-bg); color: var(--muted); font-family: var(--font-head);
     font-weight:700; cursor:pointer; font-size: 0.9rem; border: 1px solid var(--line); border-bottom: none;
   }
-  .tab.active{ background: var(--panel); color: var(--gold); box-shadow: 0 -6px 20px rgba(0,0,0,0.4), inset 0 2px 0 var(--rose-gold); }
+  .tab.active{ background: var(--panel); color: var(--gold); box-shadow: 0 -6px 20px rgba(var(--shade),0.4), inset 0 2px 0 var(--rose-gold); }
   .card{
     background: var(--panel); border-radius: 14px;
-    box-shadow: 0 14px 40px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.03);
+    box-shadow: 0 14px 40px rgba(var(--shade),0.55), inset 0 1px 0 rgba(255,255,255,0.03);
     padding: 1.6rem; margin-bottom: 1.4rem; border: 1px solid var(--line);
   }
-  label{ display:block; font-family: 'Trebuchet MS', sans-serif; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 0.4rem; }
+  label{ display:block; font-family: var(--font-head); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 0.4rem; }
   select, input{
     width:100%; padding: 0.7rem 0.8rem; border-radius: 8px; border: 1.5px solid var(--line);
     font-size: 1rem; font-family: inherit; background: var(--panel-alt); color: var(--ink);
@@ -90,18 +216,18 @@
   button{
     margin-top: 1.1rem; width: 100%; padding: 0.85rem;
     background: linear-gradient(180deg, var(--accent) 0%, var(--accent-dark) 100%);
-    color: #f2f5f0; border: 1px solid rgba(0,0,0,0.3); border-radius: 8px;
-    font-family: 'Trebuchet MS', sans-serif; font-weight: 700; font-size: 1rem;
-    cursor: pointer; transition: filter 0.15s ease; box-shadow: 0 6px 16px rgba(0,0,0,0.45);
+    color: var(--btn-ink); border: 1px solid rgba(0,0,0,0.3); border-radius: 8px;
+    font-family: var(--font-head); font-weight: 700; font-size: 1rem;
+    cursor: pointer; transition: filter 0.15s ease; box-shadow: 0 6px 16px rgba(var(--shade),0.45);
   }
   button:hover{ filter: brightness(1.12); }
   #result{ margin-top: 1.2rem; }
   .hit{ border-left: 5px solid var(--rose-gold); background: var(--panel-alt); padding: 1.1rem 1.2rem; border-radius: 8px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.03); margin-bottom: 0.7rem; }
-  .hit .rank{ font-family:'Trebuchet MS', sans-serif; font-size: 2.2rem; font-weight: 800; color: var(--gold); line-height: 1; }
+  .hit .rank{ font-family:var(--font-head); font-size: 2.2rem; font-weight: 800; color: var(--gold); line-height: 1; }
   .hit .rank sup{ font-size: 1rem; color: var(--muted); }
   .hit .name{ font-size: 1.15rem; font-weight: 700; margin: 0.3rem 0 0.1rem; color: var(--ink); }
   .hit .meta{ color: var(--muted); font-size: 0.92rem; }
-  .miss{ border-left: 5px solid var(--danger); background: var(--danger-bg); padding: 1.1rem 1.2rem; border-radius: 8px; color: #d3ada0; }
+  .miss{ border-left: 5px solid var(--danger); background: var(--danger-bg); padding: 1.1rem 1.2rem; border-radius: 8px; color: var(--danger-ink); }
   .miss a{ color: var(--gold); }
   .asof{ font-size: 0.82rem; color: var(--muted); margin-top: 0.6rem; text-align:right; }
   .note{ font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
@@ -112,22 +238,22 @@
   td{ padding:0.35rem 0; color: var(--ink); }
   .compare-wrap{ display:flex; gap:1rem; flex-wrap:wrap; margin-top:1rem; }
   .compare-col{ flex:1 1 240px; background:var(--panel-alt); border-radius:10px; padding:1rem; text-align:center; border:1px solid var(--line); }
-  .compare-col .rank{ font-family:'Trebuchet MS',sans-serif; font-size:2rem; font-weight:800; color:var(--gold); }
+  .compare-col .rank{ font-family:var(--font-head); font-size:2rem; font-weight:800; color:var(--gold); }
   .compare-col .name{ font-weight:700; margin:0.3rem 0; color: var(--ink); }
   .compare-col .pts{ color:var(--muted); font-size:0.85rem; }
-  .vs{ display:flex; align-items:center; justify-content:center; font-family:'Trebuchet MS',sans-serif; font-weight:800; color:var(--gold); font-size:1.3rem; }
+  .vs{ display:flex; align-items:center; justify-content:center; font-family:var(--font-head); font-weight:800; color:var(--gold); font-size:1.3rem; }
   .winner{ box-shadow: 0 0 0 3px var(--rose-gold) inset; }
   .searchbox{ position:relative; }
-  .suggestions{ position:absolute; top:100%; left:0; right:0; background:var(--panel-alt); border:1px solid var(--line); border-top:none; border-radius:0 0 8px 8px; max-height:220px; overflow-y:auto; z-index:10; display:none; box-shadow:0 12px 24px rgba(0,0,0,0.5); }
+  .suggestions{ position:absolute; top:100%; left:0; right:0; background:var(--panel-alt); border:1px solid var(--line); border-top:none; border-radius:0 0 8px 8px; max-height:220px; overflow-y:auto; z-index:10; display:none; box-shadow:0 12px 24px rgba(var(--shade),0.5); }
   .suggestions div{ padding:0.55rem 0.8rem; cursor:pointer; font-size:0.88rem; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; gap:0.5rem; color: var(--ink); }
   .suggestions div:hover{ background: var(--court); }
   .suggestions .s-id{ color:var(--muted); font-variant-numeric:tabular-nums; }
-  .preview{ margin-top:1.4rem; background: linear-gradient(135deg, var(--court) 0%, #0a1712 100%); color: #dfe6e0; border-radius:12px; padding:1.2rem 1.4rem; line-height:1.55; font-size:0.95rem; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-  .preview strong{ color: var(--gold); }
+  .preview{ margin-top:1.4rem; background: linear-gradient(135deg, var(--court) 0%, var(--court-deep) 100%); color: var(--preview-ink); border-radius:12px; padding:1.2rem 1.4rem; line-height:1.55; font-size:0.95rem; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 10px 30px rgba(var(--shade),0.5); }
+  .preview strong{ color: var(--hl); }
   .stat-grid{ display:flex; gap:1rem; margin-top:0.9rem; flex-wrap:wrap; }
   .stat-grid div{ flex:1 1 140px; background:rgba(255,255,255,0.05); border-radius:8px; padding:0.6rem 0.8rem; }
-  .stat-grid .stat-label{ font-family:'Trebuchet MS',sans-serif; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.06em; opacity:0.75; }
-  .stat-grid .stat-val{ font-family:'Trebuchet MS',sans-serif; font-weight:800; font-size:1.1rem; }
+  .stat-grid .stat-label{ font-family:var(--font-head); font-size:0.7rem; text-transform:uppercase; letter-spacing:0.06em; opacity:0.75; }
+  .stat-grid .stat-val{ font-family:var(--font-head); font-weight:800; font-size:1.1rem; }
   .rank-holders .hit + .hit{ margin-top:0.6rem; }
   .tied-scroll-wrap{ position:relative; margin-bottom:0.9rem; }
   .tied-scroll{ display:flex; gap:0.9rem; overflow-x:auto; scroll-snap-type:x proximity; padding: 0.2rem 0.2rem 0.8rem; scrollbar-width: thin; scrollbar-color: var(--rose-gold-dim) var(--panel-alt); }
@@ -135,27 +261,27 @@
   .tied-scroll::-webkit-scrollbar-track{ background: var(--panel-alt); border-radius:8px; }
   .tied-scroll::-webkit-scrollbar-thumb{ background: var(--rose-gold-dim); border-radius:8px; }
   .tied-card{ flex: 0 0 220px; scroll-snap-align: start; background: var(--panel-alt); border: 1px solid var(--line); border-top: 3px solid var(--rose-gold); border-radius: 10px; padding: 1rem; }
-  .tied-card .rank{ font-family:'Trebuchet MS',sans-serif; font-size:1.7rem; font-weight:800; color:var(--gold); line-height:1; }
+  .tied-card .rank{ font-family:var(--font-head); font-size:1.7rem; font-weight:800; color:var(--gold); line-height:1; }
   .tied-card .name{ font-weight:700; margin:0.35rem 0 0.15rem; font-size:0.98rem; }
   .tied-card .meta{ color:var(--muted); font-size:0.82rem; line-height:1.4; }
-  .tied-label{ font-family:'Trebuchet MS',sans-serif; font-size:0.8rem; color: var(--rose-gold); margin-bottom:0.5rem; display:flex; align-items:center; gap:0.4rem; }
+  .tied-label{ font-family:var(--font-head); font-size:0.8rem; color: var(--rose-gold); margin-bottom:0.5rem; display:flex; align-items:center; gap:0.4rem; }
   .tied-label::after{ content:'\2192'; opacity:0.6; }
 
   /* Playstyle quiz — now a normal tab, styled like the rest of the card content */
   .quiz-progress-track{ height:4px; background:var(--panel-alt); border-radius:2px; margin:0.8rem 0 1.2rem; overflow:hidden; }
   .quiz-progress-fill{ height:100%; background: linear-gradient(90deg, var(--gold), var(--rose-gold)); border-radius:2px; }
   .quiz-q{ font-size:1.05rem; font-weight:700; margin:0 0 1rem; color:var(--ink); }
-  .quiz-opt{ display:block; width:100%; text-align:left; background:var(--panel-alt); border:1px solid var(--line); color:var(--ink); margin:0 0 0.6rem; font-weight:400; font-family:'Georgia',serif; font-size:0.95rem; padding:0.75rem 0.9rem; box-shadow:none; }
+  .quiz-opt{ display:block; width:100%; text-align:left; background:var(--panel-alt); border:1px solid var(--line); color:var(--ink); margin:0 0 0.6rem; font-weight:400; font-family:var(--font-body); font-size:0.95rem; padding:0.75rem 0.9rem; box-shadow:none; }
   .quiz-opt:hover{ border-color: var(--rose-gold); filter:none; }
   .quiz-result{ text-align:center; padding:0.5rem 0; }
   .quiz-result .label{ font-size:0.8rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; }
-  .quiz-result .style-name{ font-family:'Trebuchet MS',sans-serif; font-size:1.5rem; font-weight:800; color:var(--gold); margin:0.3rem 0 0.8rem; }
+  .quiz-result .style-name{ font-family:var(--font-head); font-size:1.5rem; font-weight:800; color:var(--gold); margin:0.3rem 0 0.8rem; }
   .quiz-result p{ line-height:1.6; color:var(--ink); }
 
 .hist-wrap{overflow-x:auto;margin:0.4rem 0 0.9rem;}
 table.hist{width:100%;border-collapse:collapse;font-size:0.92rem;}
-table.hist th{text-align:left;color:var(--rose-gold);font-family:'Trebuchet MS',sans-serif;font-size:0.75rem;letter-spacing:0.08em;text-transform:uppercase;padding:0.4rem 0.6rem;border-bottom:1px solid rgba(207,157,148,0.35);}
-table.hist td{padding:0.45rem 0.6rem;border-bottom:1px solid rgba(255,255,255,0.06);}
+table.hist th{text-align:left;color:var(--rose-gold);font-family:var(--font-head);font-size:0.75rem;letter-spacing:0.08em;text-transform:uppercase;padding:0.4rem 0.6rem;border-bottom:1px solid color-mix(in srgb, var(--rose-gold) 35%, transparent);}
+table.hist td{padding:0.45rem 0.6rem;border-bottom:1px solid var(--line);}
 table.hist tr.hist-here td{color:var(--gold);font-weight:bold;}
 .hist-date{opacity:0.6;font-size:0.8rem;margin-left:0.3rem;}
 .hist-none{opacity:0.55;font-style:italic;}
@@ -166,8 +292,10 @@ table.hist tr.hist-here td{color:var(--gold);font-weight:bold;}
 </head>
 <body>
 <header>
-  <h1>AITA <span>Rank Finder</span></h1>
+  <svg class="hero-ball" viewBox="0 0 48 48" aria-hidden="true"><defs><radialGradient id="bg1" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#fff7b0"/><stop offset=".55" stop-color="#ffd21f"/><stop offset="1" stop-color="#d1a800"/></radialGradient></defs><circle cx="24" cy="24" r="22" fill="url(#bg1)"/><path d="M6 12c10 4 14 12 12 24M42 36c-10-4-14-12-12-24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" opacity=".9"/></svg>
+  <div class="hero-kicker">India's junior tennis rankings</div>
   <p>Enter your AITA registration number to find your national junior ranking, or compare two players head-to-head.</p>
+  <div class="theme-picker" id="theme-picker" aria-label="Colour scheme"></div>
 </header>
 
 <main>
@@ -195,7 +323,7 @@ table.hist tr.hist-here td{color:var(--gold);font-weight:bold;}
     </div>
 
     <div class="card">
-      <h3 style="margin-top:0;font-family:'Trebuchet MS',sans-serif;">Leaderboard (top 20)</h3>
+      <h3 style="margin-top:0;font-family:var(--font-head);">Leaderboard (top 20)</h3>
       <div id="board"><div class="asof">Loading rankings&hellip;</div></div>
     </div>
   </div>
@@ -227,15 +355,16 @@ table.hist tr.hist-here td{color:var(--gold);font-weight:bold;}
 
   <div id="view-quiz" style="display:none;">
     <div class="card">
-      <h3 style="margin-top:0;font-family:'Trebuchet MS',sans-serif;">Find Your Playstyle</h3>
+      <h3 style="margin-top:0;font-family:var(--font-head);">Find Your Playstyle</h3>
       <p class="note" style="margin-bottom:1rem;">10 quick questions, picked at random from a pool of 130 &mdash; refresh or retake for a different set every time.</p>
       <div id="quiz-app"></div>
     </div>
   </div>
 
   <div class="card note">
-    <p><strong>About this data.</strong> This is the official AITA junior national ranking list, sourced from AITA for Boys and Girls U-14 and U-16, and covers the full published list in each category.</p>
+    <p><strong>About this data.</strong> These are the official AITA ranking lists, covering every published category &mdash; Boys and Girls U-12, U-14, U-16 and U-18, plus Men's and Women's Singles and Doubles. Pick a category from the dropdown to search within it.</p>
     <p><strong>This page updates automatically.</strong> A scheduled check runs regularly and republishes fresh data whenever AITA's rankings change &mdash; nothing for you to do.</p>
+    <p><strong>Choose your colours:</strong> the buttons at the top switch the whole site between four court themes &mdash; Hard Court, Clay Court, Wimbledon and Neon Night. Your choice is remembered on this device.</p>
     <p><strong>Three ways to search:</strong> a full or partial name (pick from the dropdown), an AITA registration number, or just a rank number (like "42") to see who currently holds that spot.</p>
     <p><strong>About the Compare tab's commentary:</strong> the "matchup preview" is generated from each player's current rank and points gap only. AITA doesn't publish match history or head-to-head records, so this reads today's standing, not a prediction backed by real results.</p>
     <p>For the live, always-current list, see <a href="https://aitatennis.com/playerranking/" target="_blank" rel="noopener">aitatennis.com/playerranking</a>.</p>
@@ -445,40 +574,205 @@ function historyBlock(id, name, cat){
     <div class="hist-wrap"><table class="hist"><thead><tr><th>Category</th><th>Rank now</th><th>Best ever</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
+/* ===== Randomised brief =====
+   The written summary is assembled from pools of interchangeable paragraphs:
+   an opener, a state paragraph, a goal paragraph, an extra insight and a
+   closing note. Each search picks a fresh combination, so the same player
+   gets a different write-up almost every time. */
+const _lastPick = {};
+function pick(key, arr, ctx){
+  if(arr.length === 1) return arr[0](ctx);
+  let i, guard = 0;
+  do { i = Math.floor(Math.random() * arr.length); guard++; } while(i === _lastPick[key] && guard < 12);
+  _lastPick[key] = i;
+  return arr[i](ctx);
+}
+function pickTwo(key, arr, ctx){
+  const idx = arr.map((_, i) => i);
+  for(let i = idx.length - 1; i > 0; i--){ const j = Math.floor(Math.random()*(i+1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+  return [arr[idx[0]](ctx), arr[idx[1]](ctx)];
+}
+
+const OPENERS = [
+  c => `<strong>${c.name}</strong> (AITA ${c.id}) currently sits at <strong>#${c.rank}</strong> of ${c.pool} ranked players in ${c.cat}, with ${c.pts} ranking points on the ${c.asof} list. That places them ${c.band}.`,
+  c => `On the ${c.asof} ${c.cat} list, <strong>${c.name}</strong> is ranked <strong>#${c.rank}</strong>. That is out of ${c.pool} players holding a ranking in this category, on ${c.pts} points &mdash; ${c.band}.`,
+  c => `Rank <strong>#${c.rank}</strong> in ${c.cat}. That is where <strong>${c.name}</strong> (AITA ${c.id}) stands today, ${c.pts} points, ${c.pool} players in the category, and a position that reads as ${c.band}.`,
+  c => `Of the ${c.pool} players ranked in ${c.cat}, <strong>${c.name}</strong> comes in at <strong>#${c.rank}</strong> with ${c.pts} points. In plain terms that is ${c.band}, as of the ${c.asof} list.`,
+  c => `<strong>${c.name}</strong> holds <strong>#${c.rank}</strong> in ${c.cat} as things stand. ${c.pts} ranking points, ${c.pool} ranked players in the pool, and ${c.ahead} players currently ahead.`,
+  c => `Here is the headline: <strong>#${c.rank}</strong> in ${c.cat} for <strong>${c.name}</strong>, on ${c.pts} points. Across a field of ${c.pool}, that is ${c.band}.`,
+  c => `AITA ${c.id} &mdash; <strong>${c.name}</strong> &mdash; is the <strong>#${c.rank}</strong> ranked player in ${c.cat} on the ${c.asof} list, carrying ${c.pts} points. ${c.topPct}`,
+  c => `<strong>${c.name}</strong> is sitting at <strong>#${c.rank}</strong> out of ${c.pool} in ${c.cat}. ${c.topPct} The points total behind that is ${c.pts}.`,
+  c => `Latest standing for <strong>${c.name}</strong>: <strong>#${c.rank}</strong> in ${c.cat}, ${c.pts} points, dated ${c.asof}. Within a ${c.pool}-player category that is ${c.band}.`,
+  c => `In the ${c.cat} rankings, <strong>${c.name}</strong> (AITA ${c.id}) occupies <strong>#${c.rank}</strong>. With ${c.pts} points on the board and ${c.pool} players ranked, ${c.behind} players sit below them in the list.`,
+  c => `Start with the number that matters: <strong>#${c.rank}</strong>. That is <strong>${c.name}</strong>'s place in ${c.cat} on ${c.pts} points, from a pool of ${c.pool} ranked players &mdash; ${c.band}.`,
+  c => `<strong>${c.name}</strong> appears on the ${c.asof} ${c.cat} list at <strong>#${c.rank}</strong>. ${c.ahead} players are ranked above, ${c.behind} below, and the points column reads ${c.pts}.`,
+  c => `Position check for <strong>${c.name}</strong> (AITA ${c.id}): <strong>#${c.rank}</strong> of ${c.pool} in ${c.cat}. ${c.topPct} Points: ${c.pts}.`,
+  c => `<strong>${c.name}</strong> ranks <strong>#${c.rank}</strong> nationally in ${c.cat}. ${c.pts} points have gone into that, and the category itself holds ${c.pool} ranked players as of ${c.asof}.`,
+  c => `The ${c.asof} list puts <strong>${c.name}</strong> at <strong>#${c.rank}</strong> in ${c.cat} &mdash; ${c.band} &mdash; on ${c.pts} ranking points.`,
+  c => `Where does <strong>${c.name}</strong> stand? <strong>#${c.rank}</strong> in ${c.cat}, ${c.pts} points, ${c.pool} players ranked in the category. ${c.topPct}`
+];
+
+const STATE_NONE = [
+  c => `The latest list doesn't show a state for ${c.name}, so there's no state-level ranking to work out here. Only the national position is available.`,
+  c => `No state is listed against ${c.name} in this ranking, which means the state comparison has to be skipped &mdash; the national number is the one to go by.`,
+  c => `AITA's published row for ${c.name} leaves the state blank, so a state ranking can't be calculated. That changes nothing about the national rank itself.`,
+  c => `Because the list carries no state for ${c.name}, there's no way to say where they sit within their own state. The national standing above still holds.`,
+  c => `State information is missing from this entry, so the usual "#X in your state" line isn't possible for ${c.name} here.`,
+  c => `This particular row has no state code attached, so ${c.name} can only be measured nationally in this category for now.`
+];
+
+const STATE_MANY = [
+  c => `Representing <strong>${c.stateFull}</strong>, ${c.name} is the <strong>#${c.stateRank} ranked player from the state</strong> out of ${c.stateCount} ${c.stateFull} players in this ${c.cat} list. State and zonal tournaments mean running into those same names repeatedly &mdash; ${c.rivals}`,
+  c => `Within <strong>${c.stateFull}</strong>, ${c.name} is <strong>#${c.stateRank} of ${c.stateCount}</strong> in ${c.cat}. That state number often matters more day to day than the national one, because entry lists at state events are drawn from exactly this group.`,
+  c => `${c.stateFull} has ${c.stateCount} players ranked in ${c.cat}, and ${c.name} is <strong>#${c.stateRank}</strong> among them. ${c.stateTop}`,
+  c => `Among players from <strong>${c.stateFull}</strong>, ${c.name} sits <strong>#${c.stateRank}</strong>. ${c.climbState}`,
+  c => `State picture: <strong>#${c.stateRank} in ${c.stateFull}</strong> from ${c.stateCount} ranked ${c.cat} players. These are the opponents most likely to appear in the same draws, so the state order is worth tracking closely.`,
+  c => `${c.name} is the <strong>${c.stateOrdinal} best ranked ${c.stateFull} player</strong> in ${c.cat}. ${c.stateTop}`,
+  c => `Inside <strong>${c.stateFull}</strong> the order puts ${c.name} at <strong>#${c.stateRank}</strong>, with ${c.stateCount - c.stateRank} state players ranked below. State seedings tend to follow roughly this order.`,
+  c => `Looking only at <strong>${c.stateFull}</strong>: ${c.name} is <strong>#${c.stateRank} of ${c.stateCount}</strong> in ${c.cat}. ${c.statePctLine}`,
+  c => `Of the ${c.stateCount} ${c.stateFull} players ranked in ${c.cat}, ${c.name} is ahead of ${c.stateCount - c.stateRank} of them. ${c.stateTop}`,
+  c => `The ${c.stateFull} pecking order in ${c.cat} has ${c.name} at <strong>#${c.stateRank}</strong>. ${c.beatAbove}`,
+  c => `<strong>${c.stateFull}</strong> is a ${c.stateCount}-player group in this category, and ${c.name} ranks <strong>#${c.stateRank}</strong> in it. ${c.statePctLine}`,
+  c => `State rank: <strong>#${c.stateRank}</strong> in ${c.stateFull}. National rank: #${c.rank}. The gap between those two numbers tells you how deep ${c.stateFull} is in ${c.cat} compared with the rest of India.`
+];
+
+const STATE_ONLY = [
+  c => `${c.name} appears to be the only <strong>${c.stateFull}</strong> player in this ${c.cat} snapshot, so there's no same-state peer group to measure against &mdash; the competition here is national rather than local.`,
+  c => `No other <strong>${c.stateFull}</strong> player shows up in this ${c.cat} list, which makes ${c.name} the state's sole ranked representative in the category.`,
+  c => `As the single ranked ${c.stateFull} player in ${c.cat}, ${c.name} has no state ladder to climb &mdash; every meaningful comparison is with the national field.`,
+  c => `${c.stateFull} has exactly one ranked player in this ${c.cat} list, and it's ${c.name}. That makes travel to bigger national events more important, since there's no deep local circuit of ranked rivals.`,
+  c => `Being the only ${c.stateFull} name in the ${c.cat} rankings is unusual. It means state seeding is straightforward, but also that the real tests will come from outside the state.`
+];
+
+const MILE_TOP20 = [
+  c => `${c.name} is already inside the <strong>national top 20</strong> in ${c.cat}. This is the level where national camps, higher seedings and selector attention start to follow, and the job shifts from climbing to defending points.`,
+  c => `A top-20 national ranking in ${c.cat} is elite company. From #${c.rank}, every ranking update is about protecting points already earned as much as adding new ones.`,
+  c => `At <strong>#${c.rank}</strong>, ${c.name} is among the best ${c.cat} players in the country. The margins up here are small: one tournament can move a player several places in either direction.`,
+  c => `Inside the top 20, the next move is the top 10, and that is almost always built on titles rather than good runs. Semifinals keep a player steady at this level; finals move them up.`,
+  c => `${c.name} is in the national top 20 of ${c.cat}. Players in this bracket are usually seeded at most AITA events, which means easier early rounds but far tougher quarterfinals onwards.`,
+  c => `Top 20 in a ${c.pool}-player category puts ${c.name} in roughly the best ${c.topPctNum}% nationally. Holding that through the next cycle matters more than any single result.`,
+  c => `From #${c.rank}, the realistic target is a seeded run deep into a national-level event. The ranking is already strong enough that the opposition, not the draw, is the limiting factor.`,
+  c => `This is a top-20 national position. The useful question is no longer "how do I climb" but "which events defend the most points and which add new ones".`
+];
+
+const MILE_TOP50 = [
+  c => `${c.name} is inside the <strong>national top 50</strong> of ${c.cat}, a genuinely strong position in a pool of ${c.pool}. The next step is the <strong>top 20</strong>, usually reached by converting quarterfinals and semifinals into titles.`,
+  c => `A top-50 ranking means ${c.name} is past the crowded part of the list. Moving into the top 20 generally takes two or three strong tournament runs rather than one big week.`,
+  c => `At <strong>#${c.rank}</strong>, ${c.name} sits in the top 50 nationally. Seeding at many events starts around this level, which changes the shape of early rounds considerably.`,
+  c => `Top 50 in ${c.cat}. The gap to the top 20 is points earned over a season, not one result &mdash; consistency at the next few AITA events is what closes it.`,
+  c => `${c.name} is ranked ahead of ${c.behind} players in this category. The next bracket up rewards winning the matches that are expected, not just upsets.`,
+  c => `From #${c.rank}, the top 20 is a realistic season target rather than a stretch. It usually needs one final plus a string of quarterfinal-or-better finishes.`,
+  c => `A top-50 position in a ${c.pool}-player field puts ${c.name} in roughly the best ${c.topPctNum}% of ${c.cat} nationally. The climb from here gets slower but steadier.`,
+  c => `This is the bracket where draws stop being kind. At #${c.rank}, almost every opponent is also ranked, so points come from beating peers rather than from early-round walkovers.`
+];
+
+const MILE_CLIMB = [
+  c => `To reach the <strong>top ${c.target}</strong> in ${c.cat}, ${c.name} needs roughly <strong>${c.rankGap} places</strong>${c.ptsLine}. Junior rankings move quickly, and a couple of good runs can cover 50 to 100 places in one update.`,
+  c => `The next milestone is the <strong>top ${c.target}</strong>, which is <strong>${c.rankGap} places</strong> away${c.ptsLine}. The practical route is steady points at several events rather than waiting for one breakthrough week.`,
+  c => `<strong>${c.rankGap} places</strong> separate ${c.name} from the <strong>top ${c.target}</strong>${c.ptsLine}. That sounds like a lot, but ranking points bunch tightly in this part of the list, so each win moves the number more than it would higher up.`,
+  c => `Target: <strong>top ${c.target}</strong>. Distance: <strong>${c.rankGap} places</strong>${c.ptsLine}. At this stage of the list, entering more tournaments is often worth as much as playing better in them.`,
+  c => `From #${c.rank}, the <strong>top ${c.target}</strong> is the natural next marker &mdash; ${c.rankGap} places up${c.ptsLine}. Two quarterfinals and a semifinal is usually the kind of stretch that gets there.`,
+  c => `${c.name} is ${c.rankGap} places outside the <strong>top ${c.target}</strong> in ${c.cat}${c.ptsLine}. Because so many players sit close together on points here, a single good tournament can leapfrog dozens at once.`,
+  c => `The climb to the <strong>top ${c.target}</strong> means passing ${c.rankGap} players${c.ptsLine}. Most of them are within one good result of each other, so the order changes constantly.`,
+  c => `Next goal: <strong>top ${c.target}</strong> in ${c.cat}, currently <strong>${c.rankGap} places</strong> ahead${c.ptsLine}. Matching that player's points is the whole task, and it is usually done across a season rather than a weekend.`,
+  c => `${c.name} is ranked ahead of ${c.behind} players and chasing the <strong>top ${c.target}</strong>, ${c.rankGap} spots away${c.ptsLine}. Steady entries plus a deep run is the standard path.`,
+  c => `Realistically, the <strong>top ${c.target}</strong> is the marker worth aiming at &mdash; ${c.rankGap} places from #${c.rank}${c.ptsLine}. Chasing the top 20 straight away skips the step that actually builds the points.`,
+  c => `Getting into the <strong>top ${c.target}</strong> requires climbing ${c.rankGap} spots${c.ptsLine}. In a field of ${c.pool}, that is a change of about ${c.gapPct}% of the list &mdash; big in places, small in points.`,
+  c => `The gap to the <strong>top ${c.target}</strong> is <strong>${c.rankGap} places</strong>${c.ptsLine}. Players in this zone move most when they play a run of events back to back rather than one every few months.`
+];
+
+const EXTRA = [
+  c => `One thing worth remembering: ranking points in junior tennis decay as older results drop off, so standing still in results usually means sliding down the list.`,
+  c => `Points earned in ${c.cat} also count towards other age categories a player is eligible for, which is why some players appear in two lists at once.`,
+  c => `Rank and points tell different stories. Rank depends on everyone else; points depend only on the player. Watching points over time gives a cleaner read on progress.`,
+  c => `Draw size matters: at smaller events the same round number is worth fewer points, so two quarterfinals are not always equal.`,
+  c => `The players immediately above and below in this list are the ones most likely to appear in the same draws, so their results are worth following too.`,
+  c => `Consistency usually beats peaks in junior rankings. Three solid tournaments typically move a ranking more than one great week followed by a quiet month.`,
+  c => `A ranking is a snapshot, not a verdict. Lists are republished regularly and the order around any given spot can change substantially between updates.`,
+  c => `Entering events slightly above the current level is how most players gain quickly &mdash; losses there cost nothing, while a single win can be worth a lot.`,
+  c => `Points totals bunch tightly in the middle of a list. Around #${c.rank}, a handful of points can be the difference between several ranking places.`,
+  c => `Seeding is usually taken from this list, so a small climb can occasionally change a draw dramatically by avoiding a seed in round one.`,
+  c => `Age categories overlap. Playing up an age group is often slower for rankings in the short term but tends to pay off over a season or two.`,
+  c => `The size of this category (${c.pool} players) matters when reading the rank. The same number means something different in a crowded category than in a small one.`,
+  c => `Travel is part of the ranking. Players who can reach more AITA events naturally bank more points, independent of how well they are playing.`,
+  c => `Head-to-head records aren't published by AITA, so no ranking comparison on this page reflects who has actually beaten whom.`,
+  c => `Withdrawals and walkovers show up in points without showing up in form, which is one reason ranking order and current level can drift apart.`,
+  c => `A rank of #${c.rank} out of ${c.pool} means about ${c.behind} ranked players sit below. That context is often more useful than the rank alone.`,
+  c => `Fitness tends to decide the back end of junior tournaments. Many ranking jumps come from winning third sets rather than from new shots.`,
+  c => `Ranking lists are built from a rolling window of results, so the same tournament helps for a limited time and then stops counting.`,
+  c => `Comparing against the state list and the national list at the same time gives a fuller picture than either number on its own.`,
+  c => `Small, local ranking events are often where points are cheapest to earn, even though bigger tournaments get more attention.`
+];
+
+const CLOSERS = [
+  c => `<em>Current numbers come from the ${c.asof} list. Best-ever ranks are tracked automatically whenever a player reaches a new high.</em>`,
+  c => `<em>All figures above are from the ${c.asof} ranking list and update automatically when AITA publishes a new one.</em>`,
+  c => `<em>Based on the ${c.asof} list. This page re-checks the rankings regularly, so these numbers follow the official ones.</em>`,
+  c => `<em>Source: the ${c.asof} AITA ranking list. Best-ever positions are kept from earlier lists this site has already seen.</em>`,
+  c => `<em>Figures as of ${c.asof}. Rankings change with every published update, so this reads today's list and nothing more.</em>`,
+  c => `<em>Taken from the ${c.asof} list. Nothing here is a prediction &mdash; it is a reading of the published rankings.</em>`
+];
+
 function lookupNarrative(hit, cat){
   const poolSize = DATA[cat].length;
   const [rank, name, id, state, pts] = hit;
-  const stateFull = stateName(state);
-  const percentileBand = ordinalPercentile(rank, poolSize);
-
   const stateMates = DATA[cat].filter(p => p[3] === state);
   const stateRank = stateMates.findIndex(p => p[2] === id) + 1;
   const stateCount = stateMates.length;
+  const topPctNum = Math.max(1, Math.round((rank / poolSize) * 100));
 
-  const percentileP = `<strong>${cap(name)}</strong> (AITA ${id}) currently sits at <strong>#${rank}</strong> of ${poolSize} ranked players in ${cat}, with ${pts} ranking points on the ${ASOF} list. That places them ${percentileBand}.`;
+  const target = nearestUnreachedMilestone(rank);
+  const targetEntry = milestoneFor(cat, target);
+  const ptsGap = targetEntry ? Math.max(0, targetEntry[4] - pts) : null;
 
-  const stateP = !state
-    ? `The latest ranking list doesn't show a state for ${cap(name)}, so there's no state-level ranking to compare here.`
-    : stateCount > 1
-    ? `Representing <strong>${stateFull}</strong>, ${cap(name)} is the <strong>#${stateRank} ranked player from the state</strong> out of ${stateCount} ${stateFull} players who show up in this ${cat} list. That's worth knowing because state and zonal ranking tournaments will often mean running into the same ${stateFull} names again and again &mdash; the players just above and below at #${Math.max(1, stateRank-1)} and #${stateRank+1} in the state list are effectively the immediate rivals to watch.`
-    : `Representing <strong>${stateFull}</strong>, ${cap(name)} appears to be the only ${stateFull} player showing up in this particular ${cat} snapshot, so there's no direct same-state peer group to size up here &mdash; the competition for them is really a national one, category-wide.`;
+  const c = {
+    name: cap(name), id, cat, rank, pts, asof: ASOF,
+    pool: poolSize,
+    ahead: rank - 1,
+    behind: Math.max(0, poolSize - rank),
+    band: ordinalPercentile(rank, poolSize),
+    topPctNum,
+    topPct: `That is roughly the top ${topPctNum}% of the category.`,
+    stateFull: stateName(state),
+    stateRank, stateCount,
+    sPrev: Math.max(1, stateRank - 1),
+    sNext: stateRank + 1,
+    stateOrdinal: ordinalWord(stateRank),
+    stateTop: stateRank === 1
+      ? `That is the top of the state order in this category.`
+      : `The player directly above in the state order is at #${stateRank - 1}.`,
+    rivals: stateRank === 1
+      ? `the player at #2 in the state order is the closest challenger to keep an eye on.`
+      : `the players at #${stateRank - 1} and #${stateRank + 1} in the state order are the immediate rivals.`,
+    climbState: stateRank === 1
+      ? `Holding the top spot in the state is its own task &mdash; the player at #2 is the one chasing.`
+      : `Climbing past the player at #${stateRank - 1} in the state is usually a far more reachable short-term target than any national jump.`,
+    beatAbove: stateRank === 1
+      ? `There is nobody above in the state list, so progress now has to be measured nationally.`
+      : `Beating the player directly above in a state event is the single fastest way to move that number.`,
+    statePctLine: `Within the state that is about the top ${Math.max(1, Math.round((stateRank / stateCount) * 100))}%.`,
+    target,
+    rankGap: rank - target,
+    gapPct: Math.max(1, Math.round(((rank - target) / poolSize) * 100)),
+    ptsLine: ptsGap !== null ? `, and about <strong>${ptsGap.toFixed(2)} more ranking points</strong> to match the player at #${target}` : ''
+  };
 
-  let milestoneP;
-  if(rank <= 20){
-    milestoneP = `On the ranking ladder, ${cap(name)} is already sitting inside the <strong>national top 20</strong> for ${cat} &mdash; this is elite company, the kind of position that starts opening doors to national camps, higher seeding at bigger tournaments, and closer looks from state and national selectors. The work from here is less about climbing and more about defending the spot and consistently backing it up.`;
-  } else if(rank <= 50){
-    milestoneP = `${cap(name)} is inside the <strong>national top 50</strong>, which is a genuinely strong position in a pool of ${poolSize}. The next realistic target is cracking the <strong>top 20</strong>; at this level that usually comes down to converting quarterfinal and semifinal results into titles at ranking tournaments, since the points gap between rank 50 and rank 20 is typically earned through 2-3 strong tournament runs rather than a single event.`;
-  } else {
-    const target = nearestUnreachedMilestone(rank);
-    const targetEntry = milestoneFor(cat, target);
-    const rankGap = rank - target;
-    const ptsGap = targetEntry ? Math.max(0, targetEntry[4] - pts) : null;
-    milestoneP = `To break into the <strong>top ${target}</strong> nationally in ${cat}, ${cap(name)} has real work ahead: roughly <strong>${rankGap} places</strong> to climb${ptsGap !== null ? `, and somewhere around <strong>${ptsGap.toFixed(2)} more ranking points</strong> to catch the player currently sitting at #${target}` : ''}. That gap isn't trivial, but it's also not as far as it looks on paper &mdash; junior rankings move quickly, and a couple of good tournament runs (a final or two, or a string of quarterfinal-plus finishes) can move a player 50 to 100 places in a single ranking update. The realistic path is picking up ranking points steadily at the next few AITA events rather than chasing one big result.`;
-  }
+  const openP = pick('open', OPENERS, c);
+  const stateP = !state ? pick('stateNone', STATE_NONE, c)
+    : stateCount > 1 ? pick('stateMany', STATE_MANY, c)
+    : pick('stateOnly', STATE_ONLY, c);
+  const mileP = rank <= 20 ? pick('mile20', MILE_TOP20, c)
+    : rank <= 50 ? pick('mile50', MILE_TOP50, c)
+    : pick('mileClimb', MILE_CLIMB, c);
+  const extras = pickTwo('extra', EXTRA, c);
+  const closeP = pick('close', CLOSERS, c);
 
-  const caveatP = `<em>Current numbers come from the ${ASOF} list. Best-ever ranks come from buzzato's player records, and this site keeps improving them automatically whenever a player reaches a new high.</em>`;
+  return `<p>${openP}</p><p>${stateP}</p><p>${mileP}</p><p>${extras[0]} ${extras[1]}</p>${historyBlock(id, name, cat)}<p>${closeP}</p>`;
+}
 
-  return `<p>${percentileP}</p><p>${stateP}</p><p>${milestoneP}</p>${historyBlock(id, name, cat)}<p>${caveatP}</p>`;
+function ordinalWord(n){
+  const w = ['', 'top', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth'];
+  return w[n] || `#${n}`;
 }
 
 function renderRankHolders(result, cat, d){
@@ -854,6 +1148,32 @@ loadData();
   }
 
   window.newQuiz = newQuiz;
+})();
+</script>
+
+<script>
+/* ===== Colour scheme picker ===== */
+(function(){
+  const THEMES = [
+    {id:'hard',      name:'Hard Court',     dots:['#1457c8','#0a5a30']},
+    {id:'clay',      name:'Clay Court',     dots:['#3a1f17','#d9674a']},
+    {id:'wimbledon', name:'Wimbledon',      dots:['#17653c','#ffffff']},
+    {id:'neon',      name:'Neon Night',     dots:['#0d1b22','#b6ff3b']}
+  ];
+  const box = document.getElementById('theme-picker');
+  box.innerHTML = '<span class="tp-label">Colours</span>' + THEMES.map(t =>
+    `<button class="tp" data-t="${t.id}" title="${t.name}"><span class="dot" style="background:linear-gradient(135deg, ${t.dots[0]} 50%, ${t.dots[1]} 50%)"></span><span class="nm">${t.name}</span></button>`
+  ).join('');
+  function apply(id){
+    const root = document.documentElement;
+    if(id === 'hard') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', id);
+    box.querySelectorAll('button.tp').forEach(b => b.classList.toggle('on', b.dataset.t === id));
+    try{ localStorage.setItem('aita-theme', id); }catch(e){}
+  }
+  box.addEventListener('click', e => { const b = e.target.closest('button.tp'); if(b) apply(b.dataset.t); });
+  let saved = 'hard';
+  try{ saved = localStorage.getItem('aita-theme') || 'hard'; }catch(e){}
+  apply(THEMES.some(t => t.id === saved) ? saved : 'hard');
 })();
 </script>
 </body>
