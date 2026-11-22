@@ -846,34 +846,195 @@ function lookup(){
   }
 }
 
+/* ===== Randomised matchup brief =====
+   Built from pools of interchangeable paragraphs (opener, points, state,
+   practical read, path forward, closing note) so the same two players give a
+   different write-up almost every time. All numbers are computed, not canned. */
+
+const M_TIGHT = [
+  c => `Only <strong>${c.gap} place${c.gap===1?'':'s'}</strong> separate <strong>${c.aN}</strong> (#${c.aR}) and <strong>${c.bN}</strong> (#${c.bR}) in ${c.cat}. At this distance the ranking is close to meaningless as a predictor &mdash; it reflects who had the better few months, not who wins on a given afternoon.`,
+  c => `This one is genuinely close: <strong>#${c.aR}</strong> against <strong>#${c.bR}</strong>, ${c.gap} place${c.gap===1?'':'s'} apart. Two players this near each other have usually beaten similar opponents, and the ranking order between them can swap on one tournament.`,
+  c => `<strong>${c.favN}</strong> is ranked higher, but only just &mdash; ${c.gap} place${c.gap===1?'':'s'} and ${c.ptsGap} points. Treating that as a favourite and an underdog would be overreading the list.`,
+  c => `A near dead heat. <strong>${c.aN}</strong> and <strong>${c.bN}</strong> sit ${c.gap} place${c.gap===1?'':'s'} apart in a ${c.pool}-player category, which puts them in effectively the same tier of ${c.cat}.`,
+  c => `The gap here is ${c.gap} place${c.gap===1?'':'s'}: small enough that it could have come from a single first-round loss by one of them rather than any real difference in level.`,
+  c => `<strong>${c.aN}</strong> (#${c.aR}) and <strong>${c.bN}</strong> (#${c.bR}) are close enough that their positions have probably already swapped at some point this year. ${c.gap} place${c.gap===1?'':'s'} is noise, not a verdict.`,
+  c => `On ranking alone this is a coin toss. ${c.gap} place${c.gap===1?'':'s'} and ${c.ptsGap} points between them, in a category where a good week moves a player far more than that.`,
+  c => `Both of these players occupy the same stretch of the ${c.cat} list &mdash; #${c.aR} and #${c.bR}. The ${c.gap}-place difference says less about them than the surface or the draw would.`,
+  c => `A ${c.gap}-place gap at this level is within the margin of error of the ranking system itself. <strong>${c.aN}</strong> and <strong>${c.bN}</strong> should be read as peers.`,
+  c => `Close enough to call level: <strong>${c.aN}</strong> at #${c.aR}, <strong>${c.bN}</strong> at #${c.bR}, with ${c.ptsGap} points between them in ${c.cat}.`,
+  c => `Whatever the order says, these two are in the same bracket. ${c.gap} place${c.gap===1?'':'s'} out of ${c.pool} ranked players is a rounding difference.`,
+  c => `<strong>${c.favN}</strong> holds the higher ranking by ${c.gap} place${c.gap===1?'':'s'}, which at this end of the list usually means one extra round won somewhere, not a level above.`
+];
+
+const M_MID = [
+  c => `<strong>${c.favN}</strong> (#${c.favR}) is the higher-ranked of the two, ${c.gap} places above <strong>${c.dogN}</strong> (#${c.dogR}) in ${c.cat}. That is a real edge, but it sits in the range where upsets are common rather than remarkable.`,
+  c => `There are <strong>${c.tween} players ranked between them</strong>. That is the honest measure of the gap: <strong>${c.dogN}</strong> isn't chasing one player, but a whole band of them.`,
+  c => `<strong>${c.favN}</strong> leads by ${c.gap} places and ${c.ptsGap} points. In junior tennis a gap this size is usually a few extra rounds won over the ranking period, not a difference in ceiling.`,
+  c => `A moderate edge to <strong>${c.favN}</strong>: #${c.favR} against #${c.dogR}. Enough to make them favourite on paper, not enough for anyone to treat the result as settled.`,
+  c => `The list separates these two by ${c.gap} places, with <strong>${c.tween}</strong> other ranked ${c.cat} players in between. That's a gap that closes over a season, not overnight.`,
+  c => `<strong>${c.favN}</strong> sits ${c.gap} places ahead, which is roughly ${c.gapPct}% of the whole ${c.cat} field. Meaningful, but routinely overturned in a single match.`,
+  c => `By ranking, <strong>${c.favN}</strong> is ahead; by margin, not decisively. ${c.gap} places and ${c.ptsGap} points is the kind of distance that one strong tournament erases.`,
+  c => `<strong>${c.dogN}</strong> is the lower-ranked player here, ${c.gap} places back. Worth noting that ranking measures accumulated results, so it lags behind anyone who has recently improved.`,
+  c => `#${c.favR} against #${c.dogR} in ${c.cat}. The ${c.gap}-place difference reflects the last several months of results for both, and nothing about how either is playing this week.`,
+  c => `<strong>${c.favN}</strong> is the favourite on the list, ahead by ${c.gap} places. At this margin the better question is matchup style, not ranking order.`,
+  c => `The gap is ${c.gap} places &mdash; enough that <strong>${c.favN}</strong> would likely be seeded above <strong>${c.dogN}</strong>, which matters as much for the draw as for the match itself.`,
+  c => `<strong>${c.favN}</strong> (#${c.favR}) holds a clear but modest advantage over <strong>${c.dogN}</strong> (#${c.dogR}), with ${c.tween} players sitting between them in ${c.cat}.`
+];
+
+const M_WIDE = [
+  c => `<strong>${c.favN}</strong> (#${c.favR}) is a clear favourite on ranking, ${c.gap} places ahead of <strong>${c.dogN}</strong> (#${c.dogR}). A gap this wide normally reflects a sustained difference in results rather than one good run.`,
+  c => `This is a wide gap: ${c.gap} places, with <strong>${c.tween} ranked players in between</strong>. <strong>${c.dogN}</strong> would be the significant underdog by the list.`,
+  c => `<strong>${c.favN}</strong> leads by ${c.gap} places and ${c.ptsGap} ranking points. That points difference is the harder one to close &mdash; it represents a lot of accumulated tournament results.`,
+  c => `By the ${c.asof} list, <strong>${c.favN}</strong> is well clear: #${c.favR} to #${c.dogR}, a difference of about ${c.gapPct}% of the entire ${c.cat} field.`,
+  c => `The honest read is that <strong>${c.favN}</strong> is currently a level above on paper. ${c.gap} places is not a gap that a single upset would correct in the rankings.`,
+  c => `<strong>${c.dogN}</strong> sits ${c.gap} places below <strong>${c.favN}</strong>. Upsets across a gap this size do happen, but they are the exception rather than a regular occurrence.`,
+  c => `A substantial difference: ${c.gap} places and ${c.ptsGap} points. <strong>${c.favN}</strong> is in the ${c.favBand} band of ${c.cat}, <strong>${c.dogN}</strong> in the ${c.dogBand} band.`,
+  c => `<strong>${c.favN}</strong> is comfortably ahead on the current list &mdash; ${c.gap} places, ${c.tween} other players in between, ${c.ptsGap} points of separation.`,
+  c => `On ranking this isn't close. The useful question for <strong>${c.dogN}</strong> isn't how to beat #${c.favR} tomorrow, but what closes a ${c.ptsGap}-point gap over a season.`,
+  c => `#${c.favR} against #${c.dogR} is a wide matchup by the list. Rankings do lag improvement, so a player moving up quickly can be better than their number suggests.`,
+  c => `<strong>${c.favN}</strong> holds a ${c.gap}-place advantage. In a ${c.pool}-player category that places them in clearly different parts of the draw at most tournaments.`,
+  c => `The separation here is real: ${c.ptsGap} points. Points gaps of that size are built across many tournaments, which is why they take a long time to close.`
+];
+
+const M_PTS = [
+  c => `On points rather than position: <strong>${c.aN}</strong> has ${c.aP} and <strong>${c.bN}</strong> has ${c.bP}. ${c.density}`,
+  c => `The points column tells it more precisely than the rank does &mdash; ${c.aP} against ${c.bP}, a difference of ${c.ptsGap}. ${c.density}`,
+  c => `Ranking position is just an ordering; points are the actual measure. Here the difference is ${c.ptsGap} points. ${c.flip}`,
+  c => `${c.aN}: ${c.aP} points. ${c.bN}: ${c.bP} points. ${c.flip}`,
+  c => `A ${c.ptsGap}-point difference sits behind those two rank numbers. ${c.density}`,
+  c => `Points matter more than places, because places depend on everyone else. The gap here is ${c.ptsGap} points. ${c.flip}`,
+  c => `In the points column: ${c.aP} to ${c.bP}. ${c.density}`,
+  c => `The two sit in the ${c.aBand} and ${c.bBand} bands of a ${c.pool}-player category, separated by ${c.ptsGap} points. ${c.flip}`,
+  c => `Points are what move a ranking, and the distance between these two is ${c.ptsGap}. ${c.density}`,
+  c => `Set the rank numbers aside: ${c.aN} is on ${c.aP}, ${c.bN} on ${c.bP}. ${c.flip}`,
+  c => `That rank difference is worth ${c.ptsGap} points on the ${c.asof} list. ${c.density}`,
+  c => `Expressed as points instead of places, the gap is ${c.ptsGap}. ${c.flip}`
+];
+
+const M_STATE_SAME = [
+  c => `Both play out of <strong>${c.stateFull}</strong>, so this is a state rivalry as well as a national comparison. They will appear in the same state and zonal draws repeatedly, which means they are likely to meet far more often than two players from different states.`,
+  c => `Same state &mdash; both from <strong>${c.stateFull}</strong>. In practice that means shared entry lists, shared training circuits, and a realistic chance of meeting several times a season.`,
+  c => `These two are from <strong>${c.stateFull}</strong>. Within the state they rank <strong>#${c.aSR}</strong> and <strong>#${c.bSR}</strong>, which is the order that usually decides state seeding.`,
+  c => `A ${c.stateFull} matchup. State rank: ${c.aN} is #${c.aSR}, ${c.bN} is #${c.bSR}, out of ${c.stateCount} ranked ${c.stateFull} players in ${c.cat}.`,
+  c => `Both represent <strong>${c.stateFull}</strong>, so their results affect each other directly &mdash; state seedings, zonal qualification, and selection often come down to exactly this comparison.`,
+  c => `Same state, which raises the stakes. ${c.aN} (#${c.aSR} in ${c.stateFull}) and ${c.bN} (#${c.bSR}) are competing for the same local opportunities, not just national points.`,
+  c => `They share <strong>${c.stateFull}</strong>. Players in this position tend to know each other's games extremely well, which usually makes the matchup less predictable than the ranking suggests.`,
+  c => `A local rivalry: both from <strong>${c.stateFull}</strong>, ranked #${c.aSR} and #${c.bSR} within the state's ${c.stateCount} ranked ${c.cat} players.`
+];
+
+const M_STATE_DIFF = [
+  c => `They come from different states &mdash; <strong>${c.aState}</strong> and <strong>${c.bState}</strong> &mdash; so they'd only meet at national-level events, which makes this a rarer matchup than the ranking proximity suggests.`,
+  c => `Different states (${c.aState} and ${c.bState}). That matters practically: their paths cross only at national tournaments, so neither result affects the other's state seeding.`,
+  c => `${c.aN} plays out of ${c.aState}, ${c.bN} out of ${c.bState}. No shared state circuit, so any meeting would come in a national draw.`,
+  c => `These two represent ${c.aState} and ${c.bState} respectively. They are competing in the same national list but on largely separate local circuits.`,
+  c => `Different states, which also means different levels of local competition. The strength of the circuit a player trains and competes in shapes how fast their ranking moves.`,
+  c => `${c.aState} against ${c.bState}. Worth remembering that ranking points are national, so both are measured on the same scale regardless of where they play.`,
+  c => `They are not state rivals &mdash; ${c.aState} and ${c.bState} &mdash; so this comparison is purely about the national ${c.cat} list.`,
+  c => `With ${c.aN} in ${c.aState} and ${c.bN} in ${c.bState}, a meeting would require both to go deep in the same national event.`
+];
+
+const M_PRACTICAL = [
+  c => `The practical point for <strong>${c.dogN}</strong>: overtaking <strong>${c.favN}</strong> isn't a matter of beating them once. There are <strong>${c.tween} players ranked in between</strong>, and the ranking only moves by collecting points against the field, not by winning a single head-to-head.`,
+  c => `Something the ranking hides: <strong>${c.favN}</strong> has more to defend. Points drop off as older results age out, so the higher-ranked player has to keep producing just to stay level, while <strong>${c.dogN}</strong> has less to lose.`,
+  c => `If these two met tomorrow, the ranking would be one of the least useful pieces of information available. Style matchup, surface and match-day form decide junior matches far more than a ${c.gap}-place difference.`,
+  c => `For <strong>${c.dogN}</strong>, the useful target isn't ${c.favN} at all &mdash; it's the player at #${c.dogNext}, one place above. Rankings close one position at a time, and chasing the top of the gap tends to skip the step that actually earns the points.`,
+  c => `A seeding consequence worth noting: with ${c.gap} places between them, these two would usually land in different halves or different sections of a draw, so they'd meet late in a tournament if at all.`,
+  c => `Worth being clear about what this page can and can't see. It knows today's ranks and points. It does not know who is injured, who has just changed coach, or who has improved since the last list was published.`,
+  c => `The gap in points (${c.ptsGap}) matters more than the gap in places, because points are what either player actually controls. Places move on their own as everyone else wins and loses.`,
+  c => `Both of these players are also moving. A common mistake is assuming the gap closes just because the lower-ranked player improves &mdash; if both improve at the same rate, the ranking order doesn't change at all.`,
+  c => `If <strong>${c.dogN}</strong> is preparing for this matchup specifically, the standard approach against a higher-ranked opponent is to extend points and make them produce winners repeatedly, rather than trying to out-hit them early.`,
+  c => `And the reverse: <strong>${c.favN}</strong> carries the pressure of being expected to win. Favourites in junior tennis lose most often by starting slowly and letting a match become close enough to feel winnable to the other player.`,
+  c => `In this part of the ${c.cat} list, ${c.density2} That's the practical exchange rate between results and ranking places for both of these players.`,
+  c => `Rankings reward availability as much as ability. A player who can travel to more AITA events will usually out-rank an equally good player who plays fewer, which is one honest explanation for gaps of this size.`,
+  c => `If the aim is to predict a match rather than compare careers, the single most useful missing number is head-to-head, and no public AITA source publishes it. Two players can be 100 places apart and still be 2-2 against each other.`,
+  c => `One more practical note: these rankings are built from a rolling window of results. Both players are carrying points that will expire, so the gap you see today will shift even if neither plays another match.`
+];
+
+const M_PATH = [
+  c => `Looking forward: ${c.msPair}`,
+  c => `Where each needs to go next &mdash; ${c.msPair} Whoever closes their own gap faster is the one pulling away.`,
+  c => `Next milestones: ${c.msPair}`,
+  c => `Both have a clear next marker. ${c.msPair}`,
+  c => `The road ahead for each: ${c.msPair} These targets matter more to their development than this comparison does.`,
+  c => `Targets from here: ${c.msPair}`,
+  c => `Each has their own climb. ${c.msPair}`,
+  c => `In terms of what's next: ${c.msPair} Progress against the field is the real measure, not progress against each other.`,
+  c => `Forward view &mdash; ${c.msPair}`,
+  c => `What each is chasing: ${c.msPair}`
+];
+
+const M_CLOSE = [
+  c => `<em>This preview is built only from the ${c.asof} ranking list. There is no head-to-head record here, because AITA does not publish match results. Search either player on Find My Rank to see their best-ever ranks.</em>`,
+  c => `<em>Built from current ranks and points on the ${c.asof} list only &mdash; no match history, no form guide, no head-to-head. Nothing above says who has beaten whom.</em>`,
+  c => `<em>Everything here comes from the ${c.asof} list. AITA publishes no accessible results database, so this is a reading of standings rather than a prediction.</em>`,
+  c => `<em>Source: the ${c.asof} AITA ranking list. Head-to-head records and match results are not published anywhere public, so they cannot be included.</em>`,
+  c => `<em>Current standings as of ${c.asof}. This compares two rankings, which is not the same as comparing two players &mdash; treat it as context, not a forecast.</em>`,
+  c => `<em>Figures from the ${c.asof} list. Rankings move with every update, and no part of this reflects past meetings between these two.</em>`
+];
+
 function matchupNarrative(a, b, cat){
-  const poolSize = DATA[cat].length;
-  const rankGap = Math.abs(a[0] - b[0]);
-  const ptsGap = Math.abs(a[4] - b[4]);
-  const favorite = a[0] < b[0] ? a : b;
-  const underdog = a[0] < b[0] ? b : a;
-  const sameState = a[3] === b[3];
-
-  let p1;
-  if(rankGap <= 15){
-    p1 = `This is a genuinely <strong>tight matchup on paper</strong> &mdash; just ${rankGap} places separate <strong>${cap(a[1])}</strong> (#${a[0]}) and <strong>${cap(b[1])}</strong> (#${b[0]}) in the current ${cat} rankings. At this margin, ranking alone can't reliably predict a winner; it would likely come down to form on the day, surface, and matchup style.`;
-  } else if(rankGap <= 60){
-    p1 = `<strong>${cap(favorite[1])}</strong> (#${favorite[0]}) holds a moderate ranking edge over <strong>${cap(underdog[1])}</strong> (#${underdog[0]}) &mdash; ${rankGap} places apart in ${cat}. That's a real but not overwhelming gap; upsets from this range happen regularly in junior tennis.`;
-  } else {
-    p1 = `<strong>${cap(favorite[1])}</strong> (#${favorite[0]}) is the clear favorite by current national ranking, sitting ${rankGap} places ahead of <strong>${cap(underdog[1])}</strong> (#${underdog[0]}) in ${cat}. A gap this size usually reflects a meaningful difference in tournament results over the current ranking period.`;
+  const pool = DATA[cat], poolSize = pool.length;
+  if(a[2] && a[2] === b[2]){
+    return `<p>Both searches matched the same player, <strong>${cap(a[1])}</strong> (#${a[0]}). Enter two different players to compare them.</p>`;
   }
+  const gap = Math.abs(a[0] - b[0]);
+  const ptsGapN = Math.abs(a[4] - b[4]);
+  const fav = a[0] < b[0] ? a : b;
+  const dog = a[0] < b[0] ? b : a;
+  const sameState = a[3] && b[3] && a[3] === b[3];
+  const mates = sameState ? pool.filter(p => p[3] === a[3]) : [];
+  const perPlace = gap > 0 ? (ptsGapN / gap) : 0;
 
-  const p2 = `Looking at ranking points rather than position: <strong>${cap(a[1])}</strong> has ${a[4]} points and <strong>${cap(b[1])}</strong> has ${b[4]} &mdash; a gap of ${ptsGap.toFixed(2)}. ${cap(a[1])} sits in the "${ordinalPercentile(a[0], poolSize)}" band of the ${poolSize}-player ${cat} pool, while ${cap(b[1])} is "${ordinalPercentile(b[0], poolSize)}". ${ptsGap < 20 ? 'A points gap this small can flip with a single good tournament result.' : 'That points cushion suggests the gap is built on a string of results, not a single event.'}`;
+  const c = {
+    cat, pool: poolSize, asof: ASOF,
+    aN: cap(a[1]), bN: cap(b[1]), aR: a[0], bR: b[0], aP: a[4], bP: b[4],
+    favN: cap(fav[1]), dogN: cap(dog[1]), favR: fav[0], dogR: dog[0],
+    gap, tween: Math.max(0, gap - 1),
+    ptsGap: ptsGapN.toFixed(2),
+    gapPct: Math.max(1, Math.round((gap / poolSize) * 100)),
+    aBand: ordinalPercentile(a[0], poolSize), bBand: ordinalPercentile(b[0], poolSize),
+    favBand: ordinalPercentile(fav[0], poolSize), dogBand: ordinalPercentile(dog[0], poolSize),
+    aState: stateName(a[3]) || 'an unlisted state', bState: stateName(b[3]) || 'an unlisted state',
+    stateFull: sameState ? stateName(a[3]) : '',
+    stateCount: mates.length,
+    aSR: sameState ? mates.findIndex(p => p[2] === a[2]) + 1 : 0,
+    bSR: sameState ? mates.findIndex(p => p[2] === b[2]) + 1 : 0,
+    dogNext: Math.max(1, dog[0] - 1),
+    msA: milestoneSentence(a, cat), msB: milestoneSentence(b, cat),
+    msPair: (function(){
+      const mA = milestoneSentence(a, cat), mB = milestoneSentence(b, cat);
+      if(a[0] <= 50 && b[0] <= 50)
+        return `Both are already inside the national top 50 in ${cat}, so the next marker for each is the top 20.`;
+      if(a[0] > 50 && b[0] > 50 && nearestUnreachedMilestone(a[0]) === nearestUnreachedMilestone(b[0]))
+        return `Both are chasing the same next marker, the top ${nearestUnreachedMilestone(a[0])}: ${cap(a[1])} is ${a[0]-nearestUnreachedMilestone(a[0])} places outside it, ${cap(b[1])} ${b[0]-nearestUnreachedMilestone(b[0])}.`;
+      return `${mA} ${mB}`;
+    })(),
+    density: perPlace > 0
+      ? `Across the places between them, each ranking position is worth roughly ${perPlace.toFixed(2)} points.`
+      : `Both are on effectively the same points total.`,
+    density2: perPlace > 0
+      ? `each ranking place is worth about ${perPlace.toFixed(2)} points.`
+      : `the two are separated by almost no points at all.`,
+    flip: ptsGapN < 20
+      ? `A points gap that small can flip with one good tournament result.`
+      : `That is a cushion built over several tournaments, not a single week.`
+  };
 
-  const p3 = sameState
-    ? `Both players represent <strong>${a[3]}</strong>, so beyond the national picture this would also be a state rivalry &mdash; the kind of match that often carries extra intensity at zonal and state-ranking tournaments.`
-    : `They represent different states &mdash; ${a[3]} and ${b[3]} &mdash; so this reads as a purely national-ranking matchup rather than a regional rivalry.`;
+  /* near the top of a list a few places can still be a big points gap,
+     so the band is chosen on places AND points, not places alone */
+  const band = (gap <= 15 && ptsGapN < 60) ? 'tight'
+             : (gap <= 60 && ptsGapN < 200) || (gap <= 15) ? 'mid'
+             : 'wide';
+  const opener = band === 'tight' ? pick('mTight', M_TIGHT, c)
+               : band === 'mid'   ? pick('mMid', M_MID, c)
+               : pick('mWide', M_WIDE, c);
+  const ptsP   = pick('mPts', M_PTS, c);
+  const stateP = sameState ? pick('mStateSame', M_STATE_SAME, c) : pick('mStateDiff', M_STATE_DIFF, c);
+  const pracP  = pick('mPrac', M_PRACTICAL, c);
+  const pathP  = pick('mPath', M_PATH, c);
+  const closeP = pick('mClose', M_CLOSE, c);
 
-  const p5 = `Looking at where each player needs to go from here: ${milestoneSentence(a, cat)} ${milestoneSentence(b, cat)} Whichever of the two closes their respective gap faster over the next few ranking tournaments is the one likely to be pulling further ahead by the time these two would actually meet on court.`;
-
-  const p4 = `<em>What this preview does <strong>not</strong> include: highest-ever rank, career trajectory, or head-to-head history. AITA doesn't publish an accessible ranking archive or match results database, so this tool only has the ${ASOF} list for current ranks. Search each player on the Find My Rank tab to see their best-ever ranks &mdash; but there is no match-result data, so nothing here says who has beaten the other before.</em>`;
-
-  return `<p>${p1}</p><p>${p2}</p><p>${p3}</p><p>${p5}</p><p>${p4}</p>`;
+  return `<p>${opener}</p><p>${ptsP}</p><p>${stateP}</p><p>${pracP}</p><p>${pathP}</p><p>${closeP}</p>`;
 }
 
 function compare(){
