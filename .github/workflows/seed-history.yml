@@ -1,0 +1,58 @@
+name: Seed best-ever ranks
+
+# Run by hand from the Actions tab. Start with mode "probe": it reads a few
+# player profiles, prints exactly what they contain, and changes nothing.
+# Once the probe output looks right, run it again with mode "seed".
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'probe = look only (writes nothing), seed = fill in history.json'
+        required: true
+        default: 'probe'
+        type: choice
+        options: [probe, seed]
+      limit:
+        description: 'Max players to read (0 = all). Try 200 first.'
+        required: false
+        default: '0'
+      delay:
+        description: 'Seconds between requests (be polite: 1.0 or more)'
+        required: false
+        default: '1.0'
+
+permissions:
+  contents: write
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Read profiles and seed best-ever ranks
+        env:
+          MODE: ${{ inputs.mode }}
+          LIMIT: ${{ inputs.limit }}
+          DELAY: ${{ inputs.delay }}
+        run: python scripts/seed_history.py
+
+      - name: Commit history.json if it changed
+        if: ${{ inputs.mode == 'seed' }}
+        run: |
+          if [ -n "$(git status --porcelain history.json)" ]; then
+            git config user.name  "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add history.json
+            git commit -m "Seed best-ever ranks from AITA player profiles"
+            git push
+            echo "history.json committed."
+          else
+            echo "No change to history.json."
+          fi
