@@ -270,6 +270,19 @@
   /* Playstyle quiz — now a normal tab, styled like the rest of the card content */
   .quiz-progress-track{ height:4px; background:var(--panel-alt); border-radius:2px; margin:0.8rem 0 1.2rem; overflow:hidden; }
   .quiz-progress-fill{ height:100%; background: linear-gradient(90deg, var(--gold), var(--rose-gold)); border-radius:2px; }
+  .alertbox{ margin-top:1.2rem; background:var(--panel-alt); border:2px solid var(--line);
+    border-radius:12px; padding:1.1rem 1.1rem 0.9rem; }
+  .ab-head{ font-family:var(--font-head); text-transform:uppercase; letter-spacing:0.06em;
+    font-weight:800; font-size:1.15rem; color:var(--head-ink); }
+  .ab-sub{ margin:0.3rem 0 0.8rem; font-size:0.95rem; color:var(--sub); }
+  .ab-form{ display:flex; gap:0.5rem; flex-wrap:wrap; }
+  .ab-email{ flex:1 1 13rem; min-width:0; }
+  .ab-go{ flex:0 0 auto; }
+  .ab-note{ margin:0.8rem 0 0; font-size:0.8rem; line-height:1.5; color:var(--muted); }
+  .ab-msg{ margin-top:0.6rem; font-size:0.92rem; font-weight:600; }
+  .ab-msg.good{ color:var(--gold); }
+  .ab-msg.bad{ color:var(--danger); }
+  @media (max-width:420px){ .ab-form{ flex-direction:column; } .ab-go{ width:100%; } }
   .quiz-result .blend{ font-size:0.95rem; opacity:0.85; margin-top:0.6rem; }
   .ps-brief{ text-align:left; margin-top:1.4rem; border-top:1px solid var(--line); padding-top:1rem; }
   .ps-brief .row{ margin-bottom:0.9rem; }
@@ -793,7 +806,8 @@ function renderRankHolders(result, cat, d){
       <div class="name">${cap(hit[1])}</div>
       <div class="meta">AITA ${hit[2]} &middot; ${hit[3]} &middot; ${hit[4]} points &middot; as of ${ASOF}</div>
     </div>
-    <div class="preview">${lookupNarrative(hit, cat)}</div>`;
+    <div class="preview">${lookupNarrative(hit, cat)}</div>
+    ${alertBox(hit[2], cat, cap(hit[1]))}`;
   } else {
     html += `<div class="tied-label">${holders.length} players are tied at #${rankNum} &mdash; scroll to see them all</div>`;
     html += `<div class="tied-scroll-wrap"><div class="tied-scroll">`;
@@ -825,6 +839,7 @@ function lookup(){
     const result = lookupByRank(rankNum, d);
     if(result){
       resultEl.innerHTML = renderRankHolders(result, cat, d);
+      wireAlertBox();
     } else {
       resultEl.innerHTML = `<div class="miss">No rank near #${rankNum} exists in this ${cat} list (it only goes to #${d[d.length-1][0]}).</div>`;
     }
@@ -838,12 +853,66 @@ function lookup(){
       <div class="name">${cap(hit[1])}</div>
       <div class="meta">AITA ${hit[2]} &middot; ${hit[3]} &middot; ${hit[4]} points &middot; as of ${ASOF}</div>
     </div>
-    <div class="preview">${lookupNarrative(hit, cat)}</div>`;
+    <div class="preview">${lookupNarrative(hit, cat)}</div>
+    ${alertBox(hit[2], cat, cap(hit[1]))}`;
+    wireAlertBox();
   } else if(matches && matches.length > 1){
     resultEl.innerHTML = `<div class="miss">Multiple players match "${query}" in ${cat}. Try the suggestions dropdown, or narrow with more of the name.<ul>${matches.map(p=>`<li>${cap(p[1])} &mdash; #${p[0]}, AITA ${p[2]}</li>`).join('')}</ul></div>`;
   } else {
     resultEl.innerHTML = `<div class="miss">Couldn't find "${query}" in the top ${d.length} of ${cat}. Check the <a href="https://aitatennis.com/playerranking/" target="_blank" rel="noopener">official AITA rankings</a> to confirm.</div>`;
   }
+}
+
+/* ===== Rank-change email alerts =====
+   Posts to /api/subscribe, which emails a confirmation link. Nothing becomes a
+   real subscription until that link is clicked, so nobody can sign up somebody
+   else's address. */
+function alertBox(aita, cat, name){
+  return `<div class="alertbox" data-aita="${aita}" data-cat="${cat}">
+    <div class="ab-head">Email me when this rank changes</div>
+    <p class="ab-sub">We'll email you when <strong>${name}</strong> moves in ${cat}. Rankings update about once a week.</p>
+    <form class="ab-form" novalidate>
+      <input type="email" class="ab-email" placeholder="your@email.com" autocomplete="email" required>
+      <button type="submit" class="ab-go">Notify me</button>
+    </form>
+    <p class="ab-note">We send a confirmation link first, so nobody can sign you up. Every email has an unsubscribe link, and we keep only your address and AITA number &mdash; nothing else. <strong>Under 18? Ask a parent first.</strong></p>
+    <div class="ab-msg" role="status"></div>
+  </div>`;
+}
+
+function wireAlertBox(){
+  const box = document.querySelector('.alertbox');
+  if(!box || box.dataset.wired) return;
+  box.dataset.wired = '1';
+  const form = box.querySelector('.ab-form');
+  const msg  = box.querySelector('.ab-msg');
+  const btn  = box.querySelector('.ab-go');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = box.querySelector('.ab-email').value.trim();
+    if(!email){ msg.className = 'ab-msg bad'; msg.textContent = 'Type your email address first.'; return; }
+    btn.disabled = true; btn.textContent = 'Sending...';
+    msg.className = 'ab-msg'; msg.textContent = '';
+    try{
+      const r = await fetch('/api/subscribe', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ email, aita: box.dataset.aita, cat: box.dataset.cat })
+      });
+      const out = await r.json().catch(() => ({}));
+      if(r.ok && out.ok){
+        msg.className = 'ab-msg good';
+        msg.textContent = 'Check your email and click the link to finish. It can take a minute, and it might land in spam.';
+        form.style.display = 'none';
+      } else {
+        msg.className = 'ab-msg bad';
+        msg.textContent = out.error || 'That did not work. Please try again later.';
+      }
+    } catch(err){
+      msg.className = 'ab-msg bad';
+      msg.textContent = 'Could not reach the server. Check your connection and try again.';
+    }
+    btn.disabled = false; btn.textContent = 'Notify me';
+  });
 }
 
 /* ===== Randomised matchup brief =====
