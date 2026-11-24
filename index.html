@@ -51,17 +51,31 @@
   /* clay court: white court lines in the header and on the cards */
   :root[data-theme="clay"] header{
     border-bottom:5px solid #f6efe6;
+    background-color: var(--court);
     background-image:
-      linear-gradient(172deg, transparent 0 80%, rgba(246,239,230,0.95) 80% 82.2%, transparent 82.2%),
-      linear-gradient(180deg, var(--court-light) 0%, var(--court) 45%, var(--court-deep) 100%);
+      linear-gradient(90deg, transparent 0 5.5%, rgba(246,239,230,0.97) 5.5% 6.2%, transparent 6.2% 93.8%, rgba(246,239,230,0.97) 93.8% 94.5%, transparent 94.5%),
+      linear-gradient(180deg, rgba(220,106,43,0.34) 0%, rgba(184,66,13,0.10) 45%, rgba(106,36,6,0.50) 100%),
+      url('clay.jpg');
+    background-size: auto, auto, 300px 300px;
+    background-repeat: no-repeat, no-repeat, repeat;
+  }
+  /* the court surface itself, underneath everything */
+  :root[data-theme="clay"] body{
+    background-color:#5c2108;
+    background-image:
+      linear-gradient(180deg, rgba(50,17,3,0.62) 0%, rgba(32,11,2,0.78) 100%),
+      url('clay.jpg');
+    background-size: auto, 300px 300px;
+    background-repeat: no-repeat, repeat;
+    background-attachment: scroll, scroll;
   }
   :root[data-theme="clay"] .card{ border-color:rgba(246,239,230,0.28); }
   :root[data-theme="clay"] .tab.active{ box-shadow: 0 -6px 20px rgba(0,0,0,0.4), inset 0 3px 0 #f6efe6; }
   :root[data-theme="clay"] .hit{ border-left-color:#f6efe6; }
   :root[data-theme="wimbledon"]{
     --bg:#3f8e2a; --bg-edge:#245f17; --panel:#ffffff; --panel-alt:#eef6ea;
-    --court:#2a7a22; --court-light:#4aa634; --court-deep:#154d18; --line:#c9dcc4;
-    --ink:#14301a; --muted:#4f6b4a; --gold:#5b2bb0; --rose-gold:#2a7a22; --rose-gold-dim:#8fb987;
+    --court:#55761a; --court-light:#7a9c28; --court-deep:#3a5210; --line:#d4dcc0;
+    --ink:#1d2a0c; --muted:#5a6b3c; --gold:#5b2bb0; --rose-gold:#55761a; --rose-gold-dim:#8fb987;
     --accent:#6b36c9; --accent-dark:#4a2190; --danger:#c8402b; --danger-bg:#fde8e3;
     --sub:#f4fff0; --head-ink:#ffffff; --btn-ink:#ffffff; --tab-bg:#17561b; --danger-ink:#8a2a1a; --preview-ink:#ffffff;
     --hl:#ffffff; --hl2:#d9c2ff; --shade:0,30,5;
@@ -69,10 +83,14 @@
   /* grass: mown stripes + white court lines, like the net-post photo */
   :root[data-theme="wimbledon"] header{
     border-bottom:6px solid #ffffff;
+    background-color:#b5c646;
     background-image:
       linear-gradient(90deg, transparent 0 5.5%, rgba(255,255,255,0.97) 5.5% 6.4%, transparent 6.4% 93.6%, rgba(255,255,255,0.97) 93.6% 94.5%, transparent 94.5%),
-      repeating-linear-gradient(90deg, rgba(255,255,255,0.07) 0 60px, rgba(0,0,0,0.05) 60px 120px),
-      linear-gradient(180deg, #58b53a 0%, #3f9a2a 55%, #2d7d1f 100%);
+      repeating-linear-gradient(90deg, rgba(193,206,92,0.50) 0 66px, rgba(152,172,29,0.45) 66px 132px),
+      linear-gradient(180deg, rgba(214,230,140,0.24) 0%, rgba(181,198,70,0.04) 55%, rgba(90,110,16,0.30) 100%),
+      url('grass.jpg');
+    background-size: auto, auto, auto, 300px 300px;
+    background-repeat: no-repeat, repeat, no-repeat, repeat;
   }
   :root[data-theme="wimbledon"] header::before{ content:''; display:block; height:5px; width:90px; background:#6b36c9; margin:0 auto 0.9rem; border-radius:3px; box-shadow:0 0 0 2px #fff; }
   :root[data-theme="wimbledon"] .card{ border:3px solid #ffffff; box-shadow:0 10px 30px rgba(0,40,10,0.35); }
@@ -85,7 +103,16 @@
   :root[data-theme="wimbledon"] .preview table.hist th{ color:#e4d4ff; border-bottom-color:rgba(255,255,255,0.4); }
   :root[data-theme="wimbledon"] .preview table.hist td{ color:#ffffff; border-bottom-color:rgba(255,255,255,0.2); }
   :root[data-theme="wimbledon"] .preview table.hist tr.hist-here td{ color:#ffe35a; }
-  :root[data-theme="wimbledon"] body{ background-image: linear-gradient(90deg, transparent 0 3%, rgba(255,255,255,0.35) 3% 3.5%, transparent 3.5% 96.5%, rgba(255,255,255,0.35) 96.5% 97%, transparent 97%), repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 80px, rgba(0,0,0,0.05) 80px 160px), radial-gradient(ellipse 140% 110% at 50% 40%, var(--bg) 0%, var(--bg) 45%, var(--bg-edge) 100%); }
+  :root[data-theme="wimbledon"] body{
+    background-color:#adbe3a;
+    background-image:
+      linear-gradient(90deg, transparent 0 3%, rgba(255,255,255,0.55) 3% 3.5%, transparent 3.5% 96.5%, rgba(255,255,255,0.55) 96.5% 97%, transparent 97%),
+      repeating-linear-gradient(90deg, rgba(193,206,92,0.55) 0 88px, rgba(152,172,29,0.50) 88px 176px),
+      linear-gradient(180deg, rgba(120,140,20,0.02) 0%, rgba(74,92,10,0.14) 100%),
+      url('grass.jpg');
+    background-size: auto, auto, auto, 320px 320px;
+    background-repeat: no-repeat, repeat, no-repeat, repeat;
+  }
   :root[data-theme="neon"]{
     --bg:#08080c; --bg-edge:#000000; --panel:#101016; --panel-alt:#17171f;
     --court:#0d1b22; --court-light:#12303a; --court-deep:#070f13; --line:#25252f;
@@ -93,21 +120,47 @@
     --accent:#7acc1f; --accent-dark:#4f8a10; --danger:#ff5d73; --danger-bg:#24121a;
     --sub:#9fc3cf; --head-ink:#eef0f6; --btn-ink:#0a1203; --tab-bg:#0b0b10; --danger-ink:#ffb3be; --preview-ink:#d6eef5;
   }
+  /* neon: a lit court at night — glow pools, a faint grid, hot tramlines */
+  :root[data-theme="neon"] body{
+    background-color:#08080c;
+    background-image:
+      linear-gradient(90deg, transparent 0 4%, rgba(182,255,59,0.30) 4% 4.4%, transparent 4.4% 95.6%, rgba(38,217,255,0.30) 95.6% 96%, transparent 96%),
+      repeating-linear-gradient(90deg, rgba(38,217,255,0.045) 0 1px, transparent 1px 62px),
+      repeating-linear-gradient(0deg,  rgba(182,255,59,0.040) 0 1px, transparent 1px 62px),
+      radial-gradient(ellipse 60% 42% at 12% 6%,  rgba(182,255,59,0.20) 0%, transparent 62%),
+      radial-gradient(ellipse 60% 42% at 88% 24%, rgba(38,217,255,0.20) 0%, transparent 62%),
+      radial-gradient(ellipse 80% 40% at 50% 104%, rgba(122,204,31,0.16) 0%, transparent 70%);
+  }
+  :root[data-theme="neon"] header{
+    border-bottom:3px solid var(--gold);
+    background-color:#070f13;
+    background-image:
+      linear-gradient(90deg, transparent 0 5.5%, rgba(182,255,59,0.85) 5.5% 5.9%, transparent 5.9% 94.1%, rgba(38,217,255,0.85) 94.1% 94.5%, transparent 94.5%),
+      repeating-linear-gradient(0deg, rgba(38,217,255,0.05) 0 1px, transparent 1px 48px),
+      radial-gradient(ellipse 70% 130% at 50% 120%, rgba(122,204,31,0.30) 0%, transparent 65%),
+      linear-gradient(180deg, #0d1b22 0%, #0a161c 55%, #070f13 100%);
+    box-shadow: inset 0 -1px 0 rgba(182,255,59,0.55), 0 10px 40px rgba(182,255,59,0.10);
+  }
+  :root[data-theme="neon"] .card{ box-shadow: 0 10px 34px rgba(0,0,0,0.6), 0 0 0 1px rgba(38,217,255,0.14); }
+  :root[data-theme="neon"] .hit{ box-shadow: -3px 0 14px rgba(182,255,59,0.28); }
+  :root[data-theme="neon"] .hit .rank{ text-shadow: 0 0 18px rgba(182,255,59,0.55); }
+  :root[data-theme="neon"] button:not(.tp){ box-shadow: 0 0 20px rgba(122,204,31,0.35); }
+  :root[data-theme="neon"] .tab.active{ box-shadow: 0 -6px 22px rgba(0,0,0,0.5), inset 0 3px 0 var(--gold); }
   /* default Hard Court: cream court lines and a yellow ball in the header */
   header{ position:relative; overflow:hidden; }
   :root:not([data-theme]) header{
-    border-bottom:5px solid #ebe5d9;
+    border-bottom:6px solid #ebe5d9;
+    background-color:#0d47b5;
     background-image:
-      linear-gradient(90deg, transparent 0 5.5%, rgba(235,229,217,0.95) 5.5% 6.1%, transparent 6.1% 93.9%, rgba(235,229,217,0.95) 93.9% 94.5%, transparent 94.5%),
-      radial-gradient(ellipse 70% 120% at 50% 0%, rgba(120,175,255,0.35) 0%, transparent 62%),
-      linear-gradient(180deg, #2b7cf0 0%, var(--court) 40%, var(--court-deep) 100%);
+      linear-gradient(90deg, transparent 0 5.5%, rgba(235,229,217,0.97) 5.5% 6.2%, transparent 6.2% 93.8%, rgba(235,229,217,0.97) 93.8% 94.5%, transparent 94.5%);
   }
   /* deep green "grass" glow at the bottom of the page */
   :root:not([data-theme]) body{
-    background-image:
-      radial-gradient(ellipse 90% 45% at 50% 105%, rgba(40,170,90,0.45) 0%, transparent 70%),
-      radial-gradient(ellipse 90% 70% at 50% 0%, rgba(255,255,255,0.03) 0%, transparent 60%),
-      radial-gradient(ellipse 140% 110% at 50% 40%, var(--bg) 0%, var(--bg) 45%, var(--bg-edge) 100%);
+    background-color:#07492a;
+    background-image: linear-gradient(180deg, #071536 0%, #071536 62%, #07492a 62%, #07492a 100%);
+    background-repeat:no-repeat;
+    background-size:100% 100%;
+    background-attachment:fixed;
   }
   :root:not([data-theme]) header::after{
     content:''; position:absolute; top:26px; right:calc(5.5% + 26px); width:15px; height:15px; border-radius:50%;
@@ -137,11 +190,14 @@
   .hit .rank, .compare-col .rank, .tied-card .rank{ letter-spacing:0.01em; }
   .hit .rank{ font-size:3rem; }
   label{ letter-spacing:0.1em; font-weight:600; }
-  body{ font-size:1.05rem; font-weight:600; }
-  header p, .preview, .preview p, .card p, .meta, .hit .meta, .compare-col .pts, .tied-card .meta, table.hist td, .suggestions div{ font-weight:600; }
+  body{ font-size:1.05rem; font-weight:700; }
+  header p, .preview, .preview p, .card p, .meta, .hit .meta, .compare-col .pts, .tied-card .meta, table.hist td, .suggestions div{ font-weight:700; }
   label{ font-weight:700 !important; }
   select, input{ font-weight:700; }
   strong, b{ font-weight:800; }
+  .tab{ font-weight:700; }
+  .ps-brief .row p, .ab-sub, .ab-note{ font-weight:700; }
+  .hero-kicker{ font-weight:700; }
   .theme-picker{ display:flex; justify-content:center; align-items:center; gap:0.55rem; margin-top:1.1rem; flex-wrap:wrap; }
   .theme-picker .tp-label{ font-family:var(--font-head); font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--sub); margin-right:0.2rem; }
   .theme-picker button.tp{ width:auto; margin:0; padding:0.32rem 0.7rem 0.32rem 0.38rem; display:inline-flex; align-items:center; gap:0.4rem; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.22); color:var(--head-ink); font-size:0.78rem; font-weight:700; border-radius:999px; box-shadow:none; }
